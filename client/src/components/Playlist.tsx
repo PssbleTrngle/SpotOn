@@ -1,64 +1,30 @@
 import API, { useLoading } from "../Api";
-import React, { useState, useRef } from 'react';
-import { ILabel, IPlaylist, ITrack, IRule, Opererator } from "../models";
-import classes from 'classnames';
+import React, { useState } from 'react';
+import { ILabel, IPlaylist, IRule, Operator as Operator } from "../models";
 import { useParams, Link } from "react-router-dom";
-import { TrackList, Size } from "./Songs";
+import { TrackList } from "./Songs";
+import Rule from "./Rule";
 
-function RuleContent(rule: IRule) {
-    const { category, children, operator } = rule;
-    if (category) {
-        return <>{category.text ?? category.value}</>;
-    } else if (children && children.length > 0) {
-        return <>{children.map(c => [
-            <Rule child={true} {...c} />,
-            <span>{Opererator[operator].toLowerCase()}</span>,
-        ]).flatMap(a => a).slice(0, children.length * 2 - 1)
-        }</>;
-    }
+function Builder() {
+    const [rule, setRule] = useState<IRule>({
+        operator: Operator.AND,
+        children: [
+            { operator: Operator.HAS, category: { type: 'label', value: '1' } },
+            { operator: Operator.HAS, category: { type: 'label', value: '2' } },
+        ]
+    });
 
-    return <span>Invalid</span>
-}
+    const [creator, setCreator] = useState<JSX.Element | undefined>();
 
-function Tooltip(rule: IRule) {
-    const { category, operator } = rule;
-
-    const text = (() => {
-        switch(operator) {
-            case Opererator.AND: return 'All have to match'
-            case Opererator.OR: return 'Any has to match'
-            case Opererator.XOR: return 'Exactly one has to match'
-            case Opererator.WITHOUT: return 'Exclude matches'
-            case Opererator.HAS: return category?.type ?? 'Invalid';
-        }
-    })();
-
-    return <div className='tooltip'>{text}</div>
-}
-
-export function Rule(rule: IRule & { child?: boolean }) {
-    const { child } = rule;
-    const [hovered, hover] = useState(false);
-    const ref = useRef<HTMLSpanElement>(null);
-
-    const r = <span
-        className={classes('rule', { child, hovered })}
-        ref={ref}
-        onMouseOut={() => hover(false)}
-        onMouseMove={() => hover(!ref.current?.querySelector('.rule:hover'))}
-    >
-        <RuleContent {...rule} />
-        {hovered && <Tooltip {...rule} />}
-    </span>;
-
-    if (child) return r;
-    return <div style={{ gridArea: 'rule' }}>{r}</div>
-
+    return <>
+        <Rule {...rule} edit={{ setRule, setCreator }} />
+        <div className='creator'>{creator}</div>
+    </>;
 }
 
 function Sync(props: { text: string, id: string }) {
     const { id, text } = props;
-    return <button onClick={() => API.post(`playlist/${id}/sync`)}>{text}</button>
+    return <button className='sync' onClick={() => API.post(`playlist/${id}/sync`)}>{text}</button>
 }
 
 function View(props: { id: string }) {
@@ -78,6 +44,7 @@ function View(props: { id: string }) {
 
 function Playlists() {
     return useLoading<ILabel[]>('user/playlists', playlist => <>
+        <Link to='/playlists/create'>Create new Playlist</Link>
         <ul>
             {playlist.map(({ id, name }) =>
                 <li key={id}><Link to={`/playlists/${id}`}>{name}</Link></li>
@@ -89,6 +56,7 @@ function Playlists() {
 function Playlist() {
     const { id } = useParams();
 
+    if (id === 'create') return <Builder />
     if (id) return <View {...{ id }} />
     return <Playlists />
 }

@@ -1,4 +1,4 @@
-import { ILabel, IRule, Opererator, ITrack, ICategory } from "../../../client/src/models";
+import { ILabel, IRule, Operator, ITrack, ICategory } from "../../../client/src/models";
 import { Model, Sequelize, INTEGER, STRING, Association, HasOneGetAssociationMixin, JSON, CreateOptions, VIRTUAL } from "sequelize";
 import User from "./User";
 import Api from "../api";
@@ -43,7 +43,7 @@ export class Category extends Model implements ICategory {
 export class Rule extends Model implements IRule {
 
     id!: number;
-    operator!: Opererator;
+    operator!: Operator;
     categoryID!: number | null;
     parent!: number | null;
 
@@ -116,7 +116,7 @@ export class Rule extends Model implements IRule {
 
     static forLabel(label: ILabel): IRule {
         return {
-            operator: Opererator.HAS,
+            operator: Operator.HAS,
             category: {
                 type: 'label',
                 value: label.id.toString(),
@@ -128,7 +128,7 @@ export class Rule extends Model implements IRule {
     filter(): (track: ITrack) => boolean {
         const { operator, category, children, id } = this;
 
-        if (operator === Opererator.HAS) {
+        if (operator === Operator.HAS) {
             if (category) return t => this.has(t);
             warn(`Rule has no category defined but claims to (id: ${chalk.bold(id)})`)
             return () => false;
@@ -140,16 +140,16 @@ export class Rule extends Model implements IRule {
 
             switch (operator) {
 
-                case Opererator.AND:
+                case Operator.AND:
                     return filters.reduce((f1, f2) => t => f1(t) && f2(t), () => true);
 
-                case Opererator.OR:
+                case Operator.OR:
                     return filters.reduce((f1, f2) => t => f1(t) || f2(t), () => false);
 
-                case Opererator.XOR:
+                case Operator.XOR:
                     return t => (a(t) && !b(t)) || (!a(t) && b(t));
 
-                case Opererator.WITHOUT:
+                case Operator.WITHOUT:
                     return t => a(t) && !b(t);
 
             }

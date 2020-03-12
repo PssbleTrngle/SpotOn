@@ -1,10 +1,9 @@
 import API, { useLoading } from "../Api";
 import React, { useState } from 'react';
-import { ILabel, ITrack } from "../models";
+import { ILabel } from "../models";
 import classes from 'classnames';
 import { useParams, Link } from "react-router-dom";
 import { TrackList, Size } from "./Songs";
-import { maxHeaderSize } from "http";
 
 function getBrighness(color: string) {
     const [r1, r2, g1, g2, b1, b2] = color.split('');

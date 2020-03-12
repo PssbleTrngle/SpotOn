@@ -10,7 +10,7 @@ import { resolveNaptr } from 'dns';
 import session from 'express-session';
 import Api from '../api';
 import { isArray } from 'util';
-import { ITrack, IRule, Opererator } from '../../../client/src/models'
+import { ITrack, IRule, Operator } from '../../../client/src/models'
 import { Op, where } from 'sequelize';
 import User from '../models/User';
 import Label from '../models/Label';

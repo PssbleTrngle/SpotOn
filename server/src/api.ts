@@ -4,7 +4,7 @@ import { API_URL } from "./config";
 import chalk = require("chalk");
 import User from "./models/User";
 import querystring from 'querystring';
-import { ITrack } from "../../client/src/models";
+import { ITrack, IAudioFeatures } from "../../client/src/models";
 import Playlist from "./models/Playlist";
 
 const fetchLabels = async (track: ITrack, user: User): Promise<ITrack> => {
@@ -27,6 +27,10 @@ export class Api {
                 Authorization: `Bearer ${user.accessToken}`,
             }
         });
+    }
+
+    public async audioFeatures(id: string) {
+        return this.get<IAudioFeatures>(`audio-features/${id}`);
     }
 
     public async saved(limit = 50, offset = 0) {

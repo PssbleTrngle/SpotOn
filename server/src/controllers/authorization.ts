@@ -10,7 +10,7 @@ import { resolveNaptr } from 'dns';
 import session from 'express-session';
 import Api from '../api';
 import { isArray } from 'util';
-import { ITrack, IRule, Opererator } from '../../../client/src/models'
+import { ITrack, IRule, Operator } from '../../../client/src/models'
 import { Op, where } from 'sequelize';
 import User from '../models/User';
 import Label from '../models/Label';
@@ -92,7 +92,7 @@ export default {
 
                 debug('Created Test Data')
 
-                const p1 = Promise.all([Opererator.AND, Opererator.OR, Opererator.XOR, Opererator.WITHOUT].map(async operator => {
+                const p1 = Promise.all([Operator.AND, Operator.OR, Operator.XOR, Operator.WITHOUT].map(async operator => {
                     const rule = await Rule.createNested({
                         operator,
                         children: [
@@ -101,7 +101,7 @@ export default {
                         ]
                     })
 
-                    await req.user.createPlaylist({ name: Opererator[operator], ruleID: rule.id });
+                    await req.user.createPlaylist({ name: Operator[operator], ruleID: rule.id });
                 }));
 
                 const p2 = Promise.all((await Label.findAll()).map(async label => {
@@ -110,14 +110,14 @@ export default {
                 }));
 
                 const complex: IRule = {
-                    operator: Opererator.WITHOUT,
+                    operator: Operator.WITHOUT,
                     children: [
                         {
-                            operator: Opererator.OR,
+                            operator: Operator.OR,
                             children: [
                                 Rule.forLabel(party),
                                 {
-                                    operator: Opererator.AND,
+                                    operator: Operator.AND,
                                     children: [
                                         Rule.forLabel(study),
                                         Rule.forLabel(loud),

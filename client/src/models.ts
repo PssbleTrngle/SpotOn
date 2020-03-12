@@ -36,9 +36,9 @@ export interface IModel {
 }
 
 interface IImage {
-    height: number;
-    width: number;
-    url: string;
+  height: number;
+  width: number;
+  url: string;
 }
 
 export interface IAlbum extends IModel {
@@ -50,16 +50,40 @@ export interface IArtist extends IModel {
   type: string;
 }
 
+export const AudioCategories = [
+  'acousticness',
+  'danceability',
+  'energy',
+  'instrumentalness',
+  'liveness',
+  'loudness',
+  'speechiness',
+  'valence',
+  'tempo',
+]
+
+export interface IAudioFeatures {
+  [key: string]: number;
+}
+
 export interface ITrack extends IModel {
   artists: IArtist[];
   album: IAlbum;
   explicit: boolean;
   labels: ILabel[];
+  popularity: number;
 }
 
-export enum Opererator {
-  AND, OR, WITHOUT, XOR, HAS
+export enum Operator {
+  AND, OR, WITHOUT, XOR, HAS, PLACEHOLDER, ALL
 }
+
+export const GroupOperators = [
+  Operator.AND,
+  Operator.OR,
+  Operator.WITHOUT,
+  Operator.XOR,
+];
 
 export interface ICategory {
   type: string,
@@ -68,7 +92,7 @@ export interface ICategory {
 }
 
 export interface IRule {
-  operator: Opererator;
+  operator: Operator;
   children?: IRule[];
   category?: ICategory;
 }

@@ -26,33 +26,11 @@ export async function findUser(req: APIRequest) {
 export default {
     register(app: App) {
 
-        app.get('/api/user/saved', async (req, res) => {
-
-            const { limit, offset } = req.query;
-            req.user.api().saved(limit, offset)
+        app.get('/api/track/:id/audio-features/', async (req, res) => {
+            const { id } = req.params;
+            req.user.api().audioFeatures(id)
                 .then(data => res.json({ success: true, data }))
                 .catch(e => res.status(505).json({ success: false, reason: e.message }))
-        });
-
-        app.get('/api/user/tracks', async (req, res) => {
-
-            req.user.allTracks()
-                .then(data => res.json({ success: true, data }))
-                .catch(e => res.status(505).json({ success: false, reason: e.message }))
-        });
-
-        app.get('/api/user/:user?/playlists', async (req, res) => {
-            const user = await findUser(req);
-            if (!user) return res.status(404).json({ success: false, reason: 'User not found' });
-
-            const playlists = await user.getPlaylists();
-            res.json({ success: true, data: playlists });
-        });
-
-        app.get('/api/user/:user?', async (req, res) => {
-            const user = await findUser(req);
-            if (user) res.json({ success: true, data: user })
-            else res.status(404).json({ success: false, reason: 'User not found' });
         });
 
     }

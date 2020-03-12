@@ -1,5 +1,5 @@
 import { Sequelize, INTEGER, STRING, DATE, ENUM, literal, HasManyRemoveAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
-import { FORCE_DB, DEBUG } from './config';
+import { FORCE_DB as FLUSH_DB, DEBUG } from './config';
 import { success, info } from '.';
 import User from './models/User';
 import Label from './models/Label';
@@ -13,22 +13,28 @@ const sequelize = new Sequelize({
     logging: false,
 });
 
-namespace Database {
+async function setKeyContraints(enabled: boolean) {
+    const mode = enabled ? 'ON' : 'OFF';
+    await sequelize.query(`PRAGMA foreign_keys = ${mode};`, { raw: true });
+}
 
-    export async function setup() {
+export default {
+    async setup() {
 
         const models = [User, Label, Labeled, Playlist, Rule, Category]
-        
+
         models.forEach(m => m.setup(sequelize));
         models.forEach(m => m.relations());
 
-        if (FORCE_DB) info('Flushing Database...');
-        await sequelize.sync({ force: FORCE_DB, alter: DEBUG });
+        if (FLUSH_DB) {
+            info('Flushing Database...');
+            await setKeyContraints(false);
+        }
+
+        await sequelize.sync({ force: FLUSH_DB, alter: DEBUG });
+        await setKeyContraints(true);
 
         success('Database running');
 
     }
-
 }
-
-export default Database;

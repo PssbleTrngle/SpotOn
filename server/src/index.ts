@@ -10,8 +10,8 @@ import AuthController from './controllers/authorization';
 import UserController from './controllers/user';
 import LabelsController from './controllers/labels';
 import PlaylistController from './controllers/playlists';
+import TrackCOntroller from './controllers/tracks';
 import User from './models/User';
-import Label from './models/Label';
 
 export const error = (...s: unknown[]) => console.log(chalk.red('❌ ', ...s));
 export const info = (...s: unknown[]) => console.log(chalk.cyanBright(...s));
@@ -51,19 +51,26 @@ export type App = {
     PlaylistController,
     LabelsController,
     UserController,
+    TrackCOntroller,
 ].forEach(c => c.register(app as App));
 
 async function start() {
 
-    await Database.setup();
+    try {
+        await Database.setup();
 
-    return new Promise<Server>(res => {
-        const server = app.listen(PORT, () => {
-            success(`Server started on port ${chalk.underline(PORT)}`);
-            console.log('');
-            res(server);
-        })
-    });
+        return new Promise<Server>(res => {
+            const server = app.listen(PORT, () => {
+                success(`Server started on port ${chalk.underline(PORT)}`);
+                console.log('');
+                res(server);
+            })
+        });
+
+    } catch(e) {
+        error('Encountered an error on server startup')
+        console.log(e);
+    }
 
 }
 

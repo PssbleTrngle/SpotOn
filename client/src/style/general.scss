@@ -19,6 +19,16 @@ $nav-height: 50px;
   width: 100%;
 }
 
+@mixin grid-order {
+  display: grid;
+
+  @for $i from 1 to 10 {
+    & > *:nth-child(n + #{$i}) {
+      grid-area: a#{$i};
+    }
+  }
+}
+
 $mobile-width: 700px;
 $bridge-width: 900px;
 @mixin mobile {
@@ -61,20 +71,23 @@ body {
 }
 
 input,
-button {
+button,
+select {
   padding: 15px;
   border: none;
   background: #fff5;
   cursor: pointer;
 
-  &:first-child {
-    border-bottom-left-radius: 1000px;
-    border-top-left-radius: 1000px;
-  }
+  &:not(select) {
+    &:first-of-type {
+      border-bottom-left-radius: 1000px;
+      border-top-left-radius: 1000px;
+    }
 
-  &:last-child {
-    border-top-right-radius: 1000px;
-    border-bottom-right-radius: 1000px;
+    &:last-of-type {
+      border-top-right-radius: 1000px;
+      border-bottom-right-radius: 1000px;
+    }
   }
 
   &:focus {
@@ -84,6 +97,11 @@ button {
 
   &:hover {
     background: #fff8;
+  }
+
+  &[disabled] {
+    background: #222;
+    cursor: default;
   }
 
   &.invalid {
@@ -111,7 +129,20 @@ section {
   }
 }
 
-#labels {
+select {
+  padding: 10px;
+  border: none;
+  background: #333;
+  color: #eee;
+  margin: 5px 0;
+  text-transform: capitalize;
+
+  option {
+    background: #333;
+  }
+}
+
+.labels {
   ul {
     list-style-type: none;
   }
@@ -294,11 +325,14 @@ nav {
 
 .rule {
   user-select: none;
+
   display: grid;
   grid-auto-flow: column;
   justify-content: center;
   align-items: center;
   column-gap: 5px;
+  grid-row: 1;
+
   background-color: #fff2;
   padding: 10px;
   border-radius: 1000px;
@@ -327,6 +361,11 @@ nav {
   & > span:not(.rule) {
     padding: 3px;
   }
+
+  & > button {
+    display: inline;
+    padding: 5px 8px;
+  }
 }
 
 h1,
@@ -337,7 +376,7 @@ h5 {
   text-align: center;
 }
 
-#playlists {
+.playlists {
   text-align: center;
 
   .title {
@@ -345,50 +384,94 @@ h5 {
     font-size: 4rem;
   }
 
-  .container {
-    display: grid;
+  display: grid;
 
-    @include desktop() {
-      grid-template:
-        "title sync"
-        "info rule"
-        "tracks tracks"
-        / 4fr 1fr;
+  @include desktop() {
+    grid-template:
+      "title sync"
+      "info rule"
+      "tracks tracks"
+      / 4fr 1fr;
+  }
+
+  @include bridge() {
+    grid-template:
+      "title"
+      "info"
+      "sync"
+      "rule"
+      "tracks";
+  }
+
+  @include mobile() {
+    .rule {
+      & * {
+        display: none;
+      }
+      &:before {
+        content: "Open on desktop to see rule";
+      }
     }
+  }
+
+  &[id*="create"] {
+    grid-template:
+      "rule" 1fr
+      "creator" 2fr;
+
+    row-gap: 30px;
+
+    .creator {
+      grid-area: creator;
+      max-width: 600px;
+      justify-content: center;
+      align-items: center;
+
+      gap: 40px;
+
+      @include grid-order();
+
+      grid-template:
+        "a1 a3 b" 1fr
+        "a2 a4 b" 1fr
+        / 1fr 1fr 1fr;
+
+      @include mobile() {
+        grid-template:
+          "a1"
+          "a2"
+          "a3"
+          "a4"
+          "b";
+      }
+
+      button {
+        height: 60%;
+        width: 60%;
+        margin: auto;
+        order: 5;
+        grid-area: b !important;
+      }
+
+      select {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+
+  .sync {
+    grid-area: sync;
+    border-radius: 1000px;
 
     @include bridge() {
-      grid-template:
-        "title"
-        "info"
-        "sync"
-        "rule"
-        "tracks";
+      padding: 15px 30px;
+      margin: 0 auto;
     }
 
-    @include mobile() {
-      .rule {
-        & * {
-          display: none;
-        }
-        &:before {
-          content: 'Open on desktop to see rule';
-        }
-      }
-    }
-
-    button {
-      grid-area: sync;
-      border-radius: 1000px;
-
-      @include bridge() {
-        padding: 15px 30px;
-        margin: 0 auto;
-      }
-
-      @include desktop() {
-        align-self: flex-start;
-        justify-self: end;
-      }
+    @include desktop() {
+      align-self: flex-start;
+      justify-self: end;
     }
   }
 }

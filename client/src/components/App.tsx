@@ -64,8 +64,8 @@ function Section() {
    }, [key]);
 
    return (
-      <section id={key}>
-         <div className='container'>
+      <section>
+         <div className={`container ${key}`} id={path}>
             <Switch>
 
                <Route path='/songs'>
