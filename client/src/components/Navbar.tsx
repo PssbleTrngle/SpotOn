@@ -1,6 +1,5 @@
-import API from "../Api";
-import React from 'react';
 import classes from 'classnames';
+import React from 'react';
 import { Link, useLocation } from "react-router-dom";
 
 function Navbar() {
@@ -15,7 +14,9 @@ function Navbar() {
     return (
         <nav>
             {links.map(({ to, display }) =>
-                <Link className={classes({ active: path.startsWith(to) })} key={to} {...{ to }}>{display}</Link>
+                <Link className={classes({ active: path.startsWith(to) })} key={to} {...{ to }}>
+                    <span>{display}</span>
+                </Link>
             )}
         </nav>
     )

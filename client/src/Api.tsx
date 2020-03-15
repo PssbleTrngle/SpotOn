@@ -1,7 +1,6 @@
-import { useEffect, useState, ReactNode } from "react";
 import querystring, { ParsedUrlQueryInput } from 'querystring';
+import React, { SyntheticEvent, useEffect, useState } from 'react';
 import { Response } from "./models";
-import React from 'react';
 
 export function useApi<R>(endpoint: string, params?: ParsedUrlQueryInput) {
     const [result, setResult] = useState<undefined | R>();
@@ -19,8 +18,31 @@ export function useApi<R>(endpoint: string, params?: ParsedUrlQueryInput) {
     return [result, loading] as [R | undefined, boolean];
 }
 
+export function useSubmit<R = any>(endpoint: string, data?: any, cb?: (r?: R) => unknown) {
+    const [error, setError] = useState<any>();
+    const [inProgress, setLoading] = useState(false);
+
+    const post = (e?: SyntheticEvent) => {
+        e?.preventDefault();
+        setLoading(true);
+        API.post<R>(endpoint, data)
+            .then(r => {
+                if (cb) cb(r);
+                return undefined;
+            })
+            .catch(e => e as Error)
+            .then(e => {
+                setError(e);
+                setLoading(false);
+            });
+    }
+
+    const message = error?.message;
+    return { message, error, valid: !message, post, inProgress };
+}
+
 export function Loading() {
-   return <div className='loading' />;
+    return <div className='loading' />;
 }
 
 type Render<R> = (result: R) => JSX.Element | null;
@@ -29,8 +51,8 @@ export function useLoading<R>(enpoint: string, params: ParsedUrlQueryInput | Ren
     const r = typeof params === 'function' ? params : render;
     const [result, loading] = useApi<R>(enpoint, p);
 
-    if(loading) return <Loading />
-    if(!result) return <span>Not found</span>
+    if (loading) return <Loading />
+    if (!result) return <span>Not found</span>
     return r ? r(result) : null;
 }
 
@@ -60,9 +82,9 @@ class Api {
         const query = params ? '?' + querystring.encode(params) : '';
         return await fetch(`/api/${url}${query}`)
             .then(raw => raw.json() as Promise<Response<O>>)
-            .then(response => {
-                if (response.success) return response.data;
-                throw new Error(response.reason);
+            .then(({ success, reason, data, ...e }: Response<O>) => {
+                if (success) return data;
+                throw { message: reason, ...e };
             });
     }
 
@@ -90,9 +112,9 @@ class Api {
         });
         this.update();
         return response.json()
-            .then((r: Response<O>) => {
-                if (r.success) return r.data;
-                throw new Error(r.reason);
+            .then(({ success, reason, data, ...e }: Response<O>) => {
+                if (success) return data;
+                throw { message: reason, ...e };
             });
     }
 

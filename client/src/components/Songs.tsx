@@ -1,11 +1,19 @@
-import API, { useApi, Loading } from "../Api";
-import React, { useState, ReactText, useMemo, useEffect } from 'react';
-import { ITrack, ILabel } from "../models";
 import classes from 'classnames';
-import { Label } from './Labels'
+import React, { memo, ReactText, useEffect, useMemo, useState } from 'react';
+import { Link } from "react-router-dom";
+import API, { Loading, useApi } from "../Api";
+import { IImage, ILabel, ITrack } from "../models";
+import { Image } from './App';
+import { Label } from './Labels';
 
 interface WithID {
     id: ReactText,
+}
+
+export enum Size {
+    SMALL = 2,
+    NORMAL = 1,
+    BIG = 0,
 }
 
 interface ISelection<O extends WithID> {
@@ -61,40 +69,60 @@ function useSelection<O extends WithID>(models: O[]): ISelection<O> {
     return { click, isSelected, getSelected, move };
 }
 
-function Track(props: { track: ITrack, size?: Size, selection: ISelection<ITrack>, openContextMenu: (p?: IPoint) => void }) {
-    const { track, selection } = props;
-    const { album, name, labels } = track;
-    const { click, move, isSelected } = selection;
-    const size = props.size ?? Size.NORMAL;
-    const cover = album.images[size];
-    const selected = isSelected(track);
-
-    return (
-        <div
-            style={{ width: cover.width }}
-            className={classes({ selected }, Size[size].toLowerCase())}
-            onMouseMove={e => move(e, track)}
-            onClick={e => {
-                props.openContextMenu();
-                click(e, track);
-            }}
-            onContextMenu={e => {
-                const { clientX: x, clientY: y } = e;
-                click(e, track);
-                props.openContextMenu({ x, y })
-                e.preventDefault();
-            }}
-        >
-            <img style={{ ...cover }} draggable={false} src={cover.url} alt={`Album cover for ${album.name}`} />
-            <h4>{name}</h4>
-            <div className='labels'>
-                {labels.map(label =>
-                    <Label size={Size.SMALL} key={label.id} {...label} />
-                )}
-            </div>
-        </div>
-    )
+interface CellProps<T extends { name: string } & WithID> {
+    selection?: ISelection<T>;
+    openContextMenu?: (p?: IPoint) => void;
+    model: T;
+    size?: Size;
 }
+
+export const Cell = memo(function <T extends { name: string } & WithID>(props: CellProps<T> & {
+    children?: JSX.Element | JSX.Element[],
+    cover: IImage | IImage[],
+    link?: string,
+}) {
+    const { selection, openContextMenu, model, children, link } = props;
+    const selected = selection?.isSelected(model) ?? false;
+    const size = props.size ?? Size.NORMAL;
+    const cover = Array.isArray(props.cover) ? props.cover[size] : props.cover;
+
+    const i = <>
+        <Image {...cover} alt={model.name} />
+        <h4>{model.name}</h4>
+        {children}
+    </>
+
+    const c = link ? <Link to={link}>{i}</Link> : i;
+
+    return <div
+        style={{ width: cover.width }}
+        className={classes('cell', { selected, link }, Size[size].toLowerCase())}
+        onMouseMove={e => selection?.move(e, model)}
+        onClick={e => {
+            if (openContextMenu) openContextMenu();
+            selection?.click(e, model);
+        }}
+        onContextMenu={e => {
+            const { clientX: x, clientY: y } = e;
+            if (openContextMenu) openContextMenu({ x, y })
+            selection?.click(e, model);
+            e.preventDefault();
+        }}
+    >{c}</div>
+});
+
+const Track = memo((props: CellProps<ITrack>) => {
+    const { labels, album } = props.model;
+    const cover = album.images;
+
+    return <Cell {...props} cover={cover} >
+        <div className='labels'>
+            {labels.map(label =>
+                <Label size={Size.SMALL} key={label.id} {...label} />
+            )}
+        </div>
+    </Cell>
+});
 
 interface IPoint {
     x: number;
@@ -115,7 +143,7 @@ export type IAction = {
     children: IAction[]
 })
 
-export function ContextMenu<O>(props: { actions: IAction[], point: IPoint }) {
+export const ContextMenu = (props: { actions: IAction[], point: IPoint }) => {
     const { actions, point } = props;
     const [active, setActive] = useState<IAction[]>(actions);
 
@@ -159,12 +187,6 @@ const sortByDate = (a: { added_at: string }, b: { added_at: string }) => {
     return tb - ta;
 };
 
-export enum Size {
-    SMALL = 2,
-    NORMAL = 1,
-    BIG = 0,
-}
-
 enum MatchType {
     ALL,
     NONE,
@@ -178,7 +200,7 @@ function getMatches(tracks: ITrack[], label: ILabel) {
     return MatchType.NONE;
 }
 
-export function TrackList({ tracks, size }: { tracks: ITrack[], size?: Size }) {
+export const TrackList = memo(({ tracks, size }: { tracks: ITrack[], size?: Size }) => {
     const [labels] = useApi<ILabel[]>('user/labels');
 
     const selection = useSelection(tracks);
@@ -221,17 +243,18 @@ export function TrackList({ tracks, size }: { tracks: ITrack[], size?: Size }) {
             {contextMenu && <ContextMenu point={contextMenu} {...{ actions }} />}
 
             <div className='grid'>
-                {tracks && tracks.map(track =>
+                {tracks && tracks.map(model =>
                     <Track
+                        key={model.id}
                         {...{ size }}
-                        key={track.id} {...{ track, selection, openContextMenu }}
+                        {...{ model, selection, openContextMenu }}
                     />
                 )}
             </div>
         </div>
     )
 
-}
+});
 
 function Songs() {
     const [saved, loading] = useApi<SongList>('user/saved', { limit: 50 });

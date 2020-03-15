@@ -1,62 +1,70 @@
+import { faSyncAlt, faPlusCircle } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
+import classes from 'classnames';
+import React from 'react';
+import { Link, useParams } from "react-router-dom";
 import API, { useLoading } from "../Api";
-import React, { useState } from 'react';
-import { ILabel, IPlaylist, IRule, Operator as Operator } from "../models";
-import { useParams, Link } from "react-router-dom";
-import { TrackList } from "./Songs";
+import { IPlaylist } from "../models";
+import { Image } from './App';
 import Rule from "./Rule";
+import { Cell, TrackList } from "./Songs";
 
-function Builder() {
-    const [rule, setRule] = useState<IRule>({
-        operator: Operator.AND,
-        children: [
-            { operator: Operator.HAS, category: { type: 'label', value: '1' } },
-            { operator: Operator.HAS, category: { type: 'label', value: '2' } },
-        ]
-    });
-
-    const [creator, setCreator] = useState<JSX.Element | undefined>();
-
-    return <>
-        <Rule {...rule} edit={{ setRule, setCreator }} />
-        <div className='creator'>{creator}</div>
-    </>;
+const Sync = (props: { created: boolean, id: string }) => {
+    const { id, created } = props;
+    const text = created ? 'Sync with Spotify' : 'Add to Spotiy';
+    const icon = created ? faSyncAlt : faPlusCircle;
+    return <button
+        className={classes('sync', { primary: !created })}
+        onClick={() => API.post(`playlist/${id}/sync`)}>
+        <span>{text}</span>
+        <Icon {...{ icon }} />
+    </button>
 }
 
-function Sync(props: { text: string, id: string }) {
-    const { id, text } = props;
-    return <button className='sync' onClick={() => API.post(`playlist/${id}/sync`)}>{text}</button>
-}
+const coverFor = ({ spotify }: IPlaylist, size?: number) => ({
+    url: spotify?.images[0]?.url ?? '',
+    width: size,
+    height: size,
+});
 
-function View(props: { id: string }) {
+const View = (props: { id: string }) => {
 
-    return useLoading<IPlaylist>(`playlist/${props.id}`, ({ name, tracks, rule, spotify }) =>
+    return useLoading<IPlaylist>(`playlist/${props.id}`, p =>
         <>
-            <Sync {...props} text={spotify ? 'Sync with Spotify' : 'Add to Spotiy'} />
-            <h1 className='title'>{name}</h1>
-            {spotify && <div style={{ gridArea: 'info' }}>
-                <p>{spotify.description}</p>
+            <Sync {...props} created={!!p.spotify} />
+            <Image alt={p.name} {...coverFor(p, 300)} />
+
+            <h1 className='title'>{p.name}</h1>
+            {p.spotify && <div style={{ gridArea: 'info' }}>
+                <p>{p.spotify.description}</p>
             </div>}
-            {rule && <Rule {...rule} />}
-            {tracks && <TrackList {...{ tracks }} />}
+
+            {p.rule && <Rule {...p.rule} />}
+
+            {p.tracks && <TrackList tracks={p.tracks} />}
         </>
     );
 }
 
 function Playlists() {
-    return useLoading<ILabel[]>('user/playlists', playlist => <>
-        <Link to='/playlists/create'>Create new Playlist</Link>
-        <ul>
-            {playlist.map(({ id, name }) =>
-                <li key={id}><Link to={`/playlists/${id}`}>{name}</Link></li>
+    return useLoading<IPlaylist[]>('user/playlists', playlist => <>
+        <Link className='primary' role='button' to='/playlists/create'>Create new Playlist</Link>
+        <div className='grid'>
+            {playlist.map(model =>
+                <Cell
+                    {... { model }}
+                    key={model.id}
+                    link={`/playlists/${model.id}`}
+                    cover={coverFor(model, 200)}
+                />
             )}
-        </ul>
+        </div>
     </>)
 }
 
 function Playlist() {
     const { id } = useParams();
 
-    if (id === 'create') return <Builder />
     if (id) return <View {...{ id }} />
     return <Playlists />
 }

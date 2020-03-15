@@ -1,3 +1,4 @@
+
 export interface IUser {
   id: string;
 }
@@ -13,15 +14,18 @@ export interface ILabel {
   tracks?: ITrack[];
 }
 
+export interface ISpotify extends IModel {
+  description?: string;
+  images: IImage[]
+}
+
 export interface IPlaylist {
-  id: string;
+  spotifyID?: string;
+  id: number;
   tracks?: ITrack[];
   rule?: IRule;
   name: string;
-  spotify?: IModel & {
-    description?: string;
-    images: IImage[]
-  }
+  spotify?: ISpotify;
 }
 
 interface IUrls {
@@ -35,9 +39,9 @@ export interface IModel {
   uri: string;
 }
 
-interface IImage {
-  height: number;
-  width: number;
+export interface IImage {
+  height?: number;
+  width?: number;
   url: string;
 }
 
@@ -50,20 +54,24 @@ export interface IArtist extends IModel {
   type: string;
 }
 
-export const AudioCategories = [
-  'acousticness',
-  'danceability',
-  'energy',
-  'instrumentalness',
-  'liveness',
-  'loudness',
-  'speechiness',
-  'valence',
-  'tempo',
-]
+export const Stats: {
+  [key: string]: [number, number];
+} = {
+  acousticness: [0, 1],
+  danceability: [0, 1],
+  energy: [0, 1],
+  instrumentalness: [0, 1],
+  liveness: [0, 1],
+  loudness: [-60, 0],
+  speechiness: [0, 1],
+  valence: [0, 1],
+  tempo: [0, 250],
+}
 
-export interface IAudioFeatures {
-  [key: string]: number;
+export type IFeatures = {
+  [key: string]: number | undefined;
+} & {
+  id: string;
 }
 
 export interface ITrack extends IModel {
@@ -72,27 +80,28 @@ export interface ITrack extends IModel {
   explicit: boolean;
   labels: ILabel[];
   popularity: number;
+  features?: IFeatures;
 }
 
-export enum Operator {
-  AND, OR, WITHOUT, XOR, HAS, PLACEHOLDER, ALL
+export interface IValue {
+  key: string;
+  value: string;
 }
-
-export const GroupOperators = [
-  Operator.AND,
-  Operator.OR,
-  Operator.WITHOUT,
-  Operator.XOR,
-];
 
 export interface ICategory {
   type: string,
-  value: string,
-  text?: string,
+  values: { [key: string]: string },
+  text: string,
+}
+
+export interface IOperator {
+  name: string;
+  isGroup: boolean;
+  maxChildren?: number;
 }
 
 export interface IRule {
-  operator: Operator;
+  operator: IOperator;
   children?: IRule[];
   category?: ICategory;
 }
@@ -100,7 +109,9 @@ export interface IRule {
 export type Response<D> = {
   success: true,
   data?: D,
+  reason?: undefined;
 } | {
   success: false,
   reason: string,
+  data?: undefined;
 }

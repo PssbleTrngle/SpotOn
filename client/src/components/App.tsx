@@ -1,13 +1,17 @@
-import React, { ReactNode, useState, useEffect, useContext } from 'react';
+import { faCompactDisc, faDrum, faGuitar, faHeadphones, faMusic, faRecordVinyl } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
+import classes from 'classnames';
+import React, { ReactNode, useContext, useEffect, useState, useMemo } from 'react';
+import { BrowserRouter as Router, Redirect, Route, Switch, useLocation } from 'react-router-dom';
+import { Loading, useApi } from '../Api';
+import { IImage, IUser } from '../models';
 import '../style/general.scss';
-import { Route, Switch, BrowserRouter as Router, Redirect, useLocation } from 'react-router-dom';
-import API, { useApi, Loading } from '../Api';
-import Songs from './Songs';
-import { IUser } from '../models';
-import { Provider, Curtain, Dialog, useDialogProvider } from './Dialog';
+import { Curtain, Dialog, Provider, useDialogProvider } from './Dialog';
 import Labels from './Labels';
 import Navbar from './Navbar';
 import Playlist from './Playlist';
+import Songs from './Songs';
+import Builder from './RuleBuilder';
 
 const UserContext = React.createContext<IUser | null>(null);
 export function useUser(): IUser | never {
@@ -55,41 +59,75 @@ function App() {
    );
 }
 
-function Section() {
+const ICONS = [faHeadphones, faMusic, faGuitar, faDrum, faRecordVinyl, faCompactDisc];
+
+export function Image({ url, alt, ...rest }: IImage & { alt: string }) {
+   const [hasImage, setImage] = useState(false);
+
+   const icon = useMemo(() => ICONS[Math.floor(Math.random() * ICONS.length)], [])
+
+   return <div className='img' style={{ ...rest }}>
+      <img
+         onLoad={() => setImage(true)}
+         onError={() => setImage(false)}
+         draggable={false}
+         src={url}
+         {... { alt }}
+      />
+      {!hasImage && <Icon icon={icon} />}
+   </div>
+}
+
+interface IPage {
+   path: string;
+   component: () => JSX.Element;
+   key?: string;
+}
+const pages: IPage[] = [
+   { path: '/songs', component: Songs },
+   { path: '/labels/:id?', component: Labels },
+   { path: '/playlists/create', component: Builder, key: 'create' },
+   { path: '/playlists/:id', component: Playlist, key: 'playlist' },
+   { path: '/playlists', component: Playlist },
+]
+
+function Page({ page }: { page: IPage }) {
+
    const path = useLocation().pathname.slice(1) + '/';
-   const key = path.slice(0, path.indexOf('/'));
+   const key = page.key ?? path.slice(0, path.indexOf('/'));
 
    useEffect(() => {
       document.title = 'Spot On - ' + key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
    }, [key]);
 
    return (
+      <div className={classes('container', key)}>
+         <page.component />
+      </div>
+   );
+}
+
+function Section() {
+
+   return (
       <section>
-         <div className={`container ${key}`} id={path}>
-            <Switch>
+         <Switch>
 
-               <Route path='/songs'>
-                  <Songs />
-               </Route>
+            {pages.map(page =>
+               <Route key={page.path} path={page.path}>
+                  <Page {...{ page }} />
+               </Route >
+            )}
 
-               <Route path='/labels/:id?'>
-                  <Labels />
-               </Route>
+            <Route path='/' exact>
+               <Redirect to='/songs' />
+            </Route>
 
-               <Route path='/playlists/:id?'>
-                  <Playlist />
-               </Route>
+            <Route>
+               <h1>404 - Not Found</h1>
+            </Route>
 
-               <Route path='/' exact>
-                  <Redirect to='/songs' />
-               </Route>
-
-               <Route>
-                  <h1>404 - Not Found</h1>
-               </Route>
-
-            </Switch>
-         </div>
+         </Switch>
       </section>
    );
 }
@@ -117,22 +155,6 @@ export function Lazy<M>(props: LazyProps<M>): JSX.Element {
    if (result === undefined) return <>{fallback ?? <span>Not Found {emoji}</span>}</>;
    /* Promise successfully resolved */
    return <>{render ? render(result) : result}</>;
-}
-
-function useSubmit(endpoint: string) {
-   const [message, setMessage] = useState<null | string>(null);
-
-   function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-      e.preventDefault();
-      const data = {} as any;
-      new FormData(e.currentTarget).forEach((e, k) => data[k] = e);
-      API.post(endpoint, data)
-         .then(() => null)
-         .catch((e: Error) => e.message)
-         .then(setMessage);
-   }
-
-   return { onSubmit, message };
 }
 
 export default App;

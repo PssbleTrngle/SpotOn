@@ -2,6 +2,7 @@ $red: rgb(171, 12, 46);
 $red-dark: rgb(107, 13, 34);
 $bg: #111;
 $highlight: rgb(47, 211, 88);
+$highlight-bright: rgb(74, 236, 115);
 
 $nav-height: 50px;
 
@@ -17,6 +18,12 @@ $nav-height: 50px;
   position: absolute;
   height: 100%;
   width: 100%;
+}
+
+@mixin grid {
+  display: grid;
+  justify-content: center;
+  align-items: center;
 }
 
 @mixin grid-order {
@@ -50,7 +57,7 @@ $bridge-width: 900px;
 }
 
 * {
-  transition: background 0.1s linear, filter 0.1s linear, opacity 0.1s linear;
+  transition: background 0.1s linear, filter 0.1s linear, opacity 0.1s linear, color 0.1s linear;
 }
 
 body,
@@ -70,8 +77,60 @@ body {
   color: #eee;
 }
 
+.color-picker {
+  width: 100px;
+  height: 100px;
+  cursor: grab;
+  grid-area: color;
+  position: relative;
+
+  transition: all 0.3s cubic-bezier(0, 0, 1, 1.4);
+
+  clip-path: circle(10% at 50% 50%);
+  transform: rotate(120deg);
+
+  &.enter,
+  &.enter-done {
+    clip-path: circle(100% at 50% 50%);
+    transform: rotate(0deg);
+  }
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  & > div {
+    transition: none;
+    position: absolute;
+    width: 25%;
+    height: 25%;
+    border: 2px solid #eee;
+    border-radius: 100%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  background-size: contain;
+}
+
+@mixin outline($b: 3px, $color: $highlight) {
+  outline: none;
+  box-shadow: 0 0 0 $b $color;
+}
+
 input,
 button,
+a[role="button"],
+select,
+*[contentEditable] {
+  &:focus {
+    @include outline();
+  }
+}
+
+input,
+button,
+a[role="button"],
 select {
   padding: 15px;
   border: none;
@@ -90,22 +149,35 @@ select {
     }
   }
 
-  &:focus {
-    outline: none;
-    box-shadow: 0 0 0 3px $highlight;
-  }
-
   &:hover {
     background: #fff8;
   }
 
+  &.primary {
+    background-color: $highlight;
+    color: #000;
+    font-weight: bold;
+
+    &:hover {
+      background-color: $highlight-bright;
+    }
+  }
+
   &[disabled] {
-    background: #222;
+    background: #222 !important;
     cursor: default;
   }
 
+  &.inProgress {
+    &,
+    &:hover {
+      filter: saturate(0.6);
+      cursor: wait;
+    }
+  }
+
   &.invalid {
-    box-shadow: 0 0 0 3px $red;
+    @include outline(3px, $red);
   }
 
   &[type="text"],
@@ -118,15 +190,21 @@ select {
 }
 
 section {
-  min-height: calc(100vh - #{$nav-height} - 20px);
   width: calc(100vw - 40px);
   display: grid;
   justify-content: center;
   align-items: center;
+}
 
-  .container {
-    gap: 10px;
-  }
+.container {
+  display: grid;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+
+  position: relative;
+  width: calc(100vw - 80px);
+  min-height: calc(100vh - #{$nav-height} - 20px);
 }
 
 select {
@@ -142,7 +220,31 @@ select {
   }
 }
 
-.labels {
+.container.labels {
+  grid-template:
+    "label"
+    "tracks";
+
+  .title {
+    grid-area: label;
+    @include grid();
+    grid-auto-flow: column;
+
+    button {
+      padding: 12px;
+    }
+  }
+
+  .color-picker {
+    right: 0px;
+    top: 0px;
+    position: absolute;
+  }
+
+  & > div {
+    margin: 0 auto;
+  }
+
   ul {
     list-style-type: none;
   }
@@ -156,7 +258,6 @@ select {
 }
 
 .label {
-  cursor: pointer;
   user-select: none;
   background-color: #fff6;
   border-radius: 1000px;
@@ -172,6 +273,10 @@ select {
 
   &.small {
     @include label(5rem);
+  }
+
+  &.big {
+    @include label(10rem);
   }
 }
 
@@ -190,11 +295,14 @@ select {
   justify-content: center;
   align-items: center;
 
-  & > div {
+  .cell {
     margin: 10px;
-    background-color: #444;
-    color: #000;
+    background-color: #333;
     user-select: none;
+
+    &.link:hover {
+      @include outline();
+    }
 
     .labels {
       display: flex;
@@ -208,27 +316,34 @@ select {
     }
 
     &.selected {
-      box-shadow: 0 0 0 5px $highlight;
-    }
-
-    img {
-      position: relative;
-      text-align: center;
-      display: block;
-      line-height: 5;
-
-      &:after {
-        @include pseudo();
-        content: "Unable to load cover :(";
-
-        font-size: 16px;
-        color: #eee;
-        background-color: #222;
-      }
+      @include outline(5px);
     }
 
     h4 {
       @include ellipsis(0.5rem);
+    }
+  }
+}
+
+.img {
+  position: relative;
+
+  img {
+    height: 100%;
+    width: 100%;
+
+    &:after {
+      @include pseudo();
+      background-color: #222;
+    }
+
+    & + svg {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      font-size: 6rem;
+      color: #333;
+      transform: translate(-50%, -50%);
     }
   }
 }
@@ -249,16 +364,25 @@ nav {
   a {
     float: left;
     text-align: center;
-    padding: $nav-height / 3;
+    padding: $nav-height / 3 0.2rem;
     font-weight: bold;
 
+    span {
+      border-radius: 1000px;
+      padding: $nav-height / 6 1rem;
+    }
+
     &:hover {
-      background-color: #fff3;
+      span {
+        background-color: #fff3;
+      }
     }
 
     &.active {
-      background-color: $highlight;
-      color: #000;
+      span {
+        background-color: $highlight;
+        color: #000;
+      }
     }
   }
 }
@@ -272,7 +396,6 @@ nav {
   z-index: 100;
 
   button {
-    border-radius: 0;
     width: 100%;
     text-align: left;
     background-color: #222;
@@ -284,11 +407,13 @@ nav {
     }
 
     &:first-child {
+      border-radius: 0;
       border-top-left-radius: $border;
       border-top-right-radius: $border;
     }
 
     &:last-child {
+      border-radius: 0;
       border-bottom-left-radius: $border;
       border-bottom-right-radius: $border;
     }
@@ -349,7 +474,11 @@ nav {
       color: $highlight;
     }
 
-    box-shadow: 0 0 0 1px $highlight;
+    @include outline(1px);
+  }
+
+  &.invalid {
+    @include outline(2px, $red);
   }
 
   &:not(.child) {
@@ -376,7 +505,98 @@ h5 {
   text-align: center;
 }
 
+.create {
+  grid-template:
+    "message message" 2fr
+    "name submit"
+    "rule rule" 2fr
+    "creator creator" 5fr
+    / 4fr 1fr;
+
+  max-width: 800px;
+  row-gap: 50px;
+
+  .message {
+    grid-area: message;
+  }
+
+  .creator {
+    grid-area: creator;
+
+    & > div {
+      justify-content: center;
+      align-items: center;
+
+      background-color: #fff1;
+      border-radius: 5px;
+      padding: 20px;
+
+      column-gap: 40px;
+
+      @include grid-order();
+
+      grid-template:
+        "a1 a3 a5 a7 b" 1fr
+        "a2 a4 a6 a8 b" 1fr;
+
+      @include mobile() {
+        grid-template:
+          "a1"
+          "a2"
+          "a3"
+          "a4"
+          "a5"
+          "a6"
+          "a7"
+          "a8"
+          "b";
+      }
+
+      button {
+        height: 100px;
+        width: 100px;
+        margin: auto;
+        order: 5;
+        grid-area: b !important;
+      }
+
+      select {
+        width: 100%;
+        display: block;
+      }
+    }
+  }
+}
+
+.message {
+  border: 1px solid #555;
+  border-radius: 5px;
+  padding: 10px;
+
+  &.error {
+    border-color: $red;
+  }
+}
+
 .playlists {
+  grid-template:
+    ". create ."
+    "list list list";
+  row-gap: 30px;
+
+  a {
+    text-align: center;
+    grid-area: create;
+    min-width: 300px;
+    max-width: 90%;
+  }
+
+  .grid {
+    grid-area: list;
+  }
+}
+
+.playlist {
   text-align: center;
 
   .title {
@@ -384,18 +604,23 @@ h5 {
     font-size: 4rem;
   }
 
-  display: grid;
+  & > .img {
+    grid-area: cover;
+    border-radius: 10px;
+    overflow: hidden;
+  }
 
   @include desktop() {
     grid-template:
-      "title sync"
-      "info rule"
-      "tracks tracks"
-      / 4fr 1fr;
+      "cover title sync"
+      "cover info rule"
+      "tracks tracks tracks"
+      /1fr 1fr 1fr;
   }
 
   @include bridge() {
     grid-template:
+      "cover"
       "title"
       "info"
       "sync"
@@ -414,55 +639,13 @@ h5 {
     }
   }
 
-  &[id*="create"] {
-    grid-template:
-      "rule" 1fr
-      "creator" 2fr;
-
-    row-gap: 30px;
-
-    .creator {
-      grid-area: creator;
-      max-width: 600px;
-      justify-content: center;
-      align-items: center;
-
-      gap: 40px;
-
-      @include grid-order();
-
-      grid-template:
-        "a1 a3 b" 1fr
-        "a2 a4 b" 1fr
-        / 1fr 1fr 1fr;
-
-      @include mobile() {
-        grid-template:
-          "a1"
-          "a2"
-          "a3"
-          "a4"
-          "b";
-      }
-
-      button {
-        height: 60%;
-        width: 60%;
-        margin: auto;
-        order: 5;
-        grid-area: b !important;
-      }
-
-      select {
-        width: 100%;
-        display: block;
-      }
-    }
-  }
-
   .sync {
     grid-area: sync;
     border-radius: 1000px;
+
+    span + svg {
+      margin-left: 0.4rem;
+    }
 
     @include bridge() {
       padding: 15px 30px;
@@ -485,7 +668,11 @@ h5 {
   z-index: 200;
   padding: 10px;
   border-radius: 5px;
+  
   top: 95%;
+  left: 50%;
+  transform: translate(-50%, 0);
+
   text-transform: capitalize;
 
   &::before {
@@ -499,5 +686,11 @@ h5 {
 
     left: calc(50% - #{$arrow});
     top: -$arrow;
+  }
+}
+
+.editable {
+  & + button.primary {
+    transform: translate(-145%, -15%);
   }
 }

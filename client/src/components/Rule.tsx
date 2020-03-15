@@ -1,111 +1,50 @@
-import API, { useApi } from "../Api";
-import React, { useState, useRef, useEffect } from 'react';
-import { ILabel, IRule, Operator as Operator, GroupOperators } from "../models";
 import classes from 'classnames';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
+import { IRule } from "../models";
+import { ICategoryCreator } from './RuleBuilder'
 
-type option = { value: number | string, text?: string };
-type ICategoryCreator = {
-    type: string;
-    options?: option[]
-    createRule: (o?: option) => IRule | undefined;
-} & ({
-    isRule?: undefined;
-    isOption: (r: IRule, o: option) => boolean;
-} | {
-    isRule: (r: IRule) => boolean;
-    isOption?: undefined;
-})
-
-class SimpleCategory {
-
-    constructor(
-        public type: string,
-        public createRule: () => IRule,
-        public isRule: (r: IRule) => boolean,
-    ) { }
-
+export interface ICreator {
+    handle: (r: IRule) => unknown
+    rule?: IRule
 }
 
-class ValueCategory {
-
-    constructor(
-        public type: string,
-        public options: option[],
-        private create: (o: option) => IRule,
-        public isOption: (r: IRule, o: option) => boolean,
-    ) { }
-
-    createRule(o?: option) {
-        return o ? this.create(o) : undefined;
-    }
-
-}
-
-function useCategories(): ICategoryCreator[] {
-    const [labels] = useApi<ILabel[]>('user/labels');
-
-    return [
-        new ValueCategory('label',
-            labels?.map(l => ({ value: l.id, text: l.name })) ?? [],
-            ({ value, text }) => ({
-                operator: Operator.HAS, category: {
-                    type: 'label', text: text, value: value.toString()
-                }
-            }),
-            ({ category: c }, o) => c?.type === 'label' && c?.value === o.value,
-        ),
-        new ValueCategory('group',
-            GroupOperators.map(o => ({ value: o, text: Operator[o] })),
-            ({ value }) => ({
-                operator: value as Operator, children: [
-                    { operator: Operator.PLACEHOLDER },
-                    { operator: Operator.PLACEHOLDER },
-                ]
-            }),
-            (r, o) => GroupOperators.includes(r.operator) && r.operator === o.value,
-        ),
-        new SimpleCategory('all',
-            () => ({ operator: Operator.ALL }),
-            r => r.operator === Operator.ALL,
-        )
-    ];
-}
-
-function Creator(props: { handle: (r: IRule) => unknown, rule?: IRule }) {
-    const { handle, rule: oldRule } = props;
+export function Creator(props: ICreator & { categories: ICategoryCreator[] }) {
+    const { handle, rule: oldRule, categories } = props;
     const [typeIndex, setType] = useState(0);
-    const [valueIndex, setValue] = useState(0);
-    const categories = useCategories();
+
+    const type = categories[typeIndex - 1];
+
+    const getDefault = () => type?.valueFrom?.call(type, oldRule);
+
+    const [value, setValue] = useState(getDefault);
+    const rule = type?.create(value);
 
     useEffect(() => {
         if (oldRule) {
-            const old = categories.map((t, type) => {
-                if (t.isRule) return { valid: t.isRule(oldRule), type, option: 0 };
-                const option = (t.options ?? []).findIndex(o => t.isOption(oldRule, o)) + 1;
-                return { valid: !!option, type, option }
-            }).find(o => o.valid);
-
-            if (old) {
-                const { type, option } = old;
-                setType(type + 1);
-                setValue(option);
-            }
+            const next = categories.findIndex(c => c.isRule(oldRule));
+            setType(next + 1);
+        } else {
+            setType(0);
         }
-    }, [oldRule]);
+    }, [oldRule])
 
-    const type = categories[typeIndex - 1];
-    const values = type?.options;
-    const value = values && values[valueIndex - 1];
-    const rule = type?.createRule(value);
+    useEffect(() => {
+        setValue(getDefault);
+    }, [typeIndex])
+
+    const inputs = () => {
+        const i = type?.inputs([value, setValue]) ?? <p />;
+        return Array.isArray(i) ? i : [i];
+    }
 
     return <>
         <h3>Choose a category</h3>
         <select value={typeIndex} onChange={e => {
             setType(Number.parseInt(e.target.value))
-            setValue(0);
+            setValue(getDefault);
         }}>
             <option value={0}>select...</option>
-            {categories.map(({ type }, i) =>
+            {categories.map(({ key: type }, i) =>
                 <option
                     value={i + 1}
                     key={type}
@@ -114,22 +53,14 @@ function Creator(props: { handle: (r: IRule) => unknown, rule?: IRule }) {
                 </option>
             )}
         </select>
-        <h3>Choose a value</h3>
-        {type ? ((values && values.length > 0)
-            ? <select value={valueIndex} onChange={e => setValue(Number.parseInt(e.target.value))}>
-                <option value={0}>select...</option>
-                {values.map(({ value, text }, i) =>
-                    <option
-                        value={i + 1}
-                        key={value}
-                    >
-                        {(text ?? value).toString().toLowerCase()}
-                    </option>
-                )}
-            </select>
-            : <p>Not neccessary</p>)
-            : <p />
-        }
+
+        {inputs().map((input, i) =>
+            <Fragment key={i}>
+                <h3>Choose a value</h3>
+                {input}
+            </Fragment>
+        )}
+
         <button disabled={!rule} onClick={rule && (() => handle(rule))}>
             {oldRule ? 'Update' : 'Create'}
         </button>
@@ -137,11 +68,14 @@ function Creator(props: { handle: (r: IRule) => unknown, rule?: IRule }) {
 }
 
 type RuleProps = IRule & {
+    invalid?: boolean;
     edit?: {
         setRule: (r: IRule) => unknown;
-        setCreator: (element?: JSX.Element) => unknown;
+        setCreator: (element?: ICreator) => unknown;
     }
-    child?: boolean;
+    error?: { level: number, index: number };
+    level?: number;
+    index?: number;
 }
 
 function useEditor(props: RuleProps) {
@@ -152,7 +86,6 @@ function useEditor(props: RuleProps) {
         const preserveChildren = n.children && old.children;
         if (preserveChildren) n.children = preserveChildren;
         edit?.setRule(n);
-        console.log({ old, preserveChildren })
     }
 
     const setChild = (i: number, child: IRule) => {
@@ -179,28 +112,37 @@ function useEditor(props: RuleProps) {
 }
 
 function RuleContent(props: RuleProps) {
-    const { category, children, operator, edit } = props;
+    const { category, children, operator, edit, error } = props;
     const { addChild, editChild } = useEditor(props);
+    const level = props.level ?? 0;
 
-    if (children) {
+    if (children && children.length > 0) {
 
         return <>
             {children.map((c, i) => [
 
-                <Rule key={`r-${i}`} child={true} {...c} edit={editChild(i)} />,
-                <span key={`o-${i}`}>{Operator[operator].toLowerCase()}</span>,
+                <Rule {...{ error }}
+                    level={level + 1}
+                    index={i}
+                    key={`r-${i}`} {...c}
+                    edit={editChild(i)}
+                    {...{ error }}
+                />,
+                <span key={`o-${i}`}>{operator.name}</span>,
 
             ]).flatMap(a => a).slice(0, children.length * 2 - 1)}
             {edit && <button className='create' onClick={e => {
                 e.stopPropagation();
-                edit.setCreator(<Creator handle={addChild} />)
+                edit.setCreator({ handle: addChild })
             }}>+</button>}
         </>;
 
     } else if (category) {
-        return <>{category.text ?? category.value}</>;
+        return <>{category.text}</>;
+    } else if (operator.name === 'has') {
+        return <>Placeholder</>
     } else {
-        return <>{Operator[operator].toLowerCase()}</>;
+        return <>{operator.name}</>;
     }
 }
 
@@ -208,12 +150,15 @@ function Tooltip(rule: IRule) {
     const { category, operator } = rule;
 
     const text = (() => {
-        switch (operator) {
-            case Operator.AND: return 'All have to match'
-            case Operator.OR: return 'Any has to match'
-            case Operator.XOR: return 'Exactly one has to match'
-            case Operator.WITHOUT: return 'Exclude matches'
-            case Operator.HAS: return category?.type ?? 'Invalid';
+        switch (operator.name) {
+            case 'and': return 'All have to match'
+            case 'or': return 'Any has to match'
+            case 'xor': return 'Exactly one has to match'
+            case 'without': return 'Exclude matches'
+            case 'has': return category?.type ?? 'Invalid'
+            case 'greater': return 'Greater than'
+            case 'smaller': return 'Smaller than'
+            case 'all': return 'All tracks'
         }
     })();
 
@@ -221,20 +166,23 @@ function Tooltip(rule: IRule) {
 }
 
 export function Rule(rule: RuleProps) {
-    const { child, edit } = rule;
+    const { edit, error, level, index } = rule;
     const [hovered, hover] = useState(false);
     const ref = useRef<HTMLSpanElement>(null);
     const { setRule } = useEditor(rule);
 
+    const child = level && level > 0;
+    const invalid = error && error?.level === level && error?.index === index;
+
     const r = <span
-        className={classes('rule', { child, hovered })}
+        className={classes('rule', { child, hovered, invalid })}
         ref={ref}
         onMouseOut={() => hover(false)}
         onMouseMove={() => hover(!ref.current?.querySelector('.rule:hover'))}
         role={edit && 'button'}
         onClick={e => {
             e.stopPropagation();
-            edit?.setCreator(<Creator {...{ rule }} handle={setRule} />);
+            edit?.setCreator({ rule, handle: setRule });
         }}
     >
         <RuleContent {...rule} />
