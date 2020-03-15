@@ -5,6 +5,8 @@ import { IUser } from "../../../client/src/models";
 import Playlist from "./Playlist";
 import Api from "../api";
 import l from "lodash";
+import chalk from "chalk";
+import { debug } from "..";
 
 export default class User extends Model implements IUser {
 
@@ -47,13 +49,19 @@ export default class User extends Model implements IUser {
         return new Api(this);
     }
 
-    public async allTracks() {
+    public async allTracks(includeFeatures = false) {
 
+        const api = this.api();
         const labeled = await this.getLabeled();
-        const tracks = this.api().tracks(...l.uniq(labeled.map(l => l.songID)));
-        const saved = this.api().saved(50, 0).then(a => a.map(t => t.track));
+        const tracks = api.tracks(l.uniq(labeled.map(l => l.songID)));
+        const saved = api.saved(50, 0).then(a => a.map(t => t.track));
         const all = await Promise.all([tracks, saved]).then(a => a.reduce((a, b) => [...a, ...b], []))
-        return l.uniqBy(all, t => t.id);
+        const unique = l.uniqBy(all, t => t.id);
+
+        debug(`Found ${chalk.bold(unique.length)} tracks for user`);
+
+        if(includeFeatures) return api.addFeatures(unique);
+        else return unique;
 
     }
 

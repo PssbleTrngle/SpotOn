@@ -1,22 +1,13 @@
-import { APIResponse, App, success, debug, APIRequest, ApiFunc } from '../index';
-import passport from 'passport';
-import jwt from 'jsonwebtoken';
-import { Strategy } from 'passport-spotify';
-import bcrypt from 'bcrypt';
-import chalk from 'chalk';
-import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET } from '../config';
-import { readSync } from 'fs';
-import { resolveNaptr } from 'dns';
 import session from 'express-session';
-import Api from '../api';
-import { isArray } from 'util';
-import { ITrack, IRule, Operator } from '../../../client/src/models'
-import { Op, where } from 'sequelize';
-import User from '../models/User';
+import passport from 'passport';
+import { Strategy } from 'passport-spotify';
+import { IRule } from '../../../client/src/models';
+import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET } from '../config';
+import { ApiFunc, App, debug } from '../index';
 import Label from '../models/Label';
-import Labeled from '../models/Labeled';
-import Playlist, { Rule, Category } from '../models/Playlist';
-import { OperationalError } from 'bluebird';
+import { findOperator, Operators } from '../models/Operator';
+import Rule from '../models/Rule';
+import User from '../models/User';
 
 export default {
     register(app: App) {
@@ -77,22 +68,23 @@ export default {
                     req.user.createLabel({ name, color: randomColor() })
                 ));
 
+                debug('Created Placeholder Labels')
+
+                const [party, chill, loud, study, iceage] = labels;
+
                 const lr = () => {
                     const c = Math.floor(Math.random() * labels.length);
                     return labels.sort(() => Math.random() - 0.5).slice(0, c);
                 }
 
-                const [party, chill, loud, study, iceage] = labels;
+                req.user.api().saved(30).then(tracks =>
+                    tracks.map(i => i.track).forEach(t =>
+                        Promise.all(lr().map(l => req.user.label(t.id, l)))
+                    )
+                );
 
-                const tracks = await req.user.api().saved(30);
-                const choosen = tracks.map(i => i.track)
-                await Promise.all(choosen.map(t =>
-                    Promise.all(lr().map(l => req.user.label(t.id, l)))
-                ));
-
-                debug('Created Test Data')
-
-                const p1 = Promise.all([Operator.AND, Operator.OR, Operator.XOR, Operator.WITHOUT].map(async operator => {
+                /*
+                const p1 = Promise.all(Operators.filter(o => o.isGroup).map(async operator => {
                     const rule = await Rule.createNested({
                         operator,
                         children: [
@@ -100,24 +92,25 @@ export default {
                             Rule.forLabel(loud)
                         ]
                     })
-
-                    await req.user.createPlaylist({ name: Operator[operator], ruleID: rule.id });
+        
+                    await req.user.createPlaylist({ name: operator.name, ruleID: rule.id });
                 }));
-
+        
                 const p2 = Promise.all((await Label.findAll()).map(async label => {
                     const rule = await Rule.createNested(Rule.forLabel(label))
                     await req.user.createPlaylist({ name: label.name, ruleID: rule.id });
                 }));
+                */
 
                 const complex: IRule = {
-                    operator: Operator.WITHOUT,
+                    operator: findOperator('without'),
                     children: [
                         {
-                            operator: Operator.OR,
+                            operator: findOperator('or'),
                             children: [
                                 Rule.forLabel(party),
                                 {
-                                    operator: Operator.AND,
+                                    operator: findOperator('and'),
                                     children: [
                                         Rule.forLabel(study),
                                         Rule.forLabel(loud),
@@ -130,10 +123,10 @@ export default {
                     ]
                 }
 
-                const p3 = Rule.createNested(complex)
+                await Rule.createNested(complex)
                     .then(({ id }) => req.user.createPlaylist({ ruleID: id, name: 'Complex' }));
 
-                await Promise.all([p1, p2, p3]);
+                debug('Created Placeholder Playlists')
 
             }
 

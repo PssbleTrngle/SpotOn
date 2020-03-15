@@ -4,6 +4,8 @@ import User from "./User";
 
 export default class Label extends Model implements ILabel {
 
+    public static NAME_REG = /^[A-Z \-]{4,32}$/i;
+
     public id!: number;
     public color!: string;
     public name!: string;

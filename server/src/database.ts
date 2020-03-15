@@ -1,10 +1,11 @@
-import { Sequelize, INTEGER, STRING, DATE, ENUM, literal, HasManyRemoveAssociationMixin, HasManyGetAssociationsMixin, HasOneGetAssociationMixin } from 'sequelize';
-import { FORCE_DB as FLUSH_DB, DEBUG } from './config';
-import { success, info } from '.';
-import User from './models/User';
+import { Sequelize } from 'sequelize';
+import { info, success } from '.';
+import { DEBUG, FORCE_DB as FLUSH_DB } from './config';
 import Label from './models/Label';
 import Labeled from './models/Labeled';
-import Playlist, { Rule, Category } from './models/Playlist';
+import Playlist from './models/Playlist';
+import User from './models/User';
+import Rule, { Category, Value } from "./models/Rule";
 
 require('sequelize-hierarchy')(Sequelize);
 const sequelize = new Sequelize({
@@ -21,7 +22,7 @@ async function setKeyContraints(enabled: boolean) {
 export default {
     async setup() {
 
-        const models = [User, Label, Labeled, Playlist, Rule, Category]
+        const models = [User, Label, Labeled, Playlist, Rule, Category, Value]
 
         models.forEach(m => m.setup(sequelize));
         models.forEach(m => m.relations());

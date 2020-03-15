@@ -1,10 +1,10 @@
 import { debug, error } from ".";
-import axios, { AxiosRequestConfig, AxiosInstance } from 'axios';
+import axios, { AxiosRequestConfig, AxiosInstance, AxiosError } from 'axios';
 import { API_URL } from "./config";
 import chalk = require("chalk");
 import User from "./models/User";
 import querystring from 'querystring';
-import { ITrack, IAudioFeatures } from "../../client/src/models";
+import { ITrack, IFeatures, ISpotify, Stats } from "../../client/src/models";
 import Playlist from "./models/Playlist";
 
 const fetchLabels = async (track: ITrack, user: User): Promise<ITrack> => {
@@ -18,6 +18,13 @@ interface ITrackInfo {
 
 export class Api {
 
+    private printError(url: string, e: AxiosError) {
+        error(`Failed fetching ${chalk.underline(url).slice(0, 20)} with error`)
+        error(e.message);
+        if (e.response) error(e.response.data.message ?? JSON.stringify(e.response.data));
+        return new Error('Server Error')
+    }
+
     private axios: AxiosInstance;
 
     constructor(private user: User) {
@@ -29,8 +36,29 @@ export class Api {
         });
     }
 
-    public async audioFeatures(id: string) {
-        return this.get<IAudioFeatures>(`audio-features/${id}`);
+    private parseFeatures(raw: IFeatures) {
+        const clamp = (v: number, min: number, max: number) => {
+            const f = (v - min) / max;
+            return Math.max(0, Math.min(1, f)) * 100;
+        }
+
+        return Object.keys(Stats).reduce((o, s) => ({
+            ...o, [s]: clamp(raw[s] ?? 0, ...Stats[s])
+        }), raw)
+    }
+
+    public async features<T extends string | string[]>(id: T): Promise<T extends string ? IFeatures : IFeatures[]> {
+        if (Array.isArray(id)) {
+
+            const { audio_features } = await this.get<{ audio_features: IFeatures[] }>(`audio-features`, { ids: (id as string[]).slice(0, 100).join(',') });
+            return audio_features.map(r => this.parseFeatures(r)) as any;
+
+        } else {
+
+            const raw = await this.get<IFeatures>(`audio-features/${id}`);
+            return this.parseFeatures(raw) as any;
+
+        }
     }
 
     public async saved(limit = 50, offset = 0) {
@@ -52,9 +80,9 @@ export class Api {
         return items as ITrackInfo[];
     }
 
-    public async playlist(id: string) {
-        return await this.get(`playlists/${id}`, {
-            fields: 'description,images,external_urls,name,id,uri'
+    public async playlist(id: string, fields = ['description', 'images', 'external_urls', 'name', 'id', 'uri']) {
+        return await this.get<ISpotify>(`playlists/${id}`, {
+            fields: fields.join(',')
         });
     }
 
@@ -70,16 +98,36 @@ export class Api {
 
         const endpoint = `playlists/${playlist.spotifyID}/tracks`;
         const tracks = await playlist.findTracks();
-        const data = { uris: tracks.slice(0, 100).map(t => t.uri) };
+        debug(`Sync adding ${chalk.bold(tracks.length)} tracks`)
 
-        if (replace) this.put(endpoint, data);
-        else this.post(endpoint, data);
+        if (tracks.length > 0) {
+            const data = { uris: tracks.slice(0, 100).map(t => t.uri) };
+
+            if (replace) this.put(endpoint, data);
+            else this.post(endpoint, data);
+
+        }
     }
 
-    public async tracks(...id: string[]) {
+    public async addFeatures(tracks: ITrack[]) {
+
+        const features = await this.features(tracks.map(t => t.id));
+        return tracks.map(t => ({ ...t, features: features.find(f => f.id === t.id) }))
+
+    }
+
+    public async tracks(id: string[], includeFeatures = false) {
+        if (id.length === 0) return [];
+
         const ids = id.slice(0, 50).join(',');
         const response = await this.get<{ tracks: ITrack[] }>('tracks', { ids })
+
+        /* Fetch Labels */
         const tracks = await Promise.all(response.tracks.map(t => fetchLabels(t, this.user)))
+
+        /* Fetch Audio features */
+        if (includeFeatures) return this.addFeatures(tracks);
+
         return tracks;
     }
 
@@ -91,9 +139,7 @@ export class Api {
             const response = await this.axios.get(url);
             return response.data as O;
         } catch (e) {
-            error(`Failed fetching ${chalk.underline(url)} with error ${e.message}`)
-            error(e.response.data.message);
-            throw new Error('Not found')
+            throw this.printError(url, e);
         }
 
     }
@@ -104,9 +150,7 @@ export class Api {
             const response = await this.axios.post(endpoint, data);
             return response.data as O;
         } catch (e) {
-            error(`Failed posting to ${chalk.underline(endpoint)} with error ${e.message}`)
-            error(e.response.data.message);
-            throw new Error('Internal Error')
+            throw this.printError(endpoint, e);
         }
 
     }
@@ -117,9 +161,7 @@ export class Api {
             const response = await this.axios.put(endpoint, data);
             return response.data as O;
         } catch (e) {
-            error(`Failed posting to ${chalk.underline(endpoint)} with error ${e.message}`)
-            error(e.response.data.message);
-            throw new Error('Internal Error')
+            throw this.printError(endpoint, e);
         }
 
     }

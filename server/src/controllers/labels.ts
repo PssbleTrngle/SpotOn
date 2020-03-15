@@ -1,22 +1,9 @@
-import { APIResponse, App, success, debug, APIRequest, ApiFunc } from '../index';
-import passport from 'passport';
-import jwt from 'jsonwebtoken';
-import { Strategy } from 'passport-spotify';
-import bcrypt from 'bcrypt';
-import chalk from 'chalk';
-import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET } from '../config';
-import { readSync } from 'fs';
-import { resolveNaptr } from 'dns';
-import session from 'express-session';
-import Api from '../api';
+import { App, APIRequest } from '../index';
 import { isArray } from 'util';
-import { ITrack, IRule, Operator } from '../../../client/src/models'
-import { Op, where } from 'sequelize';
-import User from '../models/User';
+import { ITrack } from '../../../client/src/models'
+import { Op } from 'sequelize';
 import Label from '../models/Label';
 import Labeled from '../models/Labeled';
-import Playlist, { Rule, Category } from '../models/Playlist';
-import { OperationalError } from 'bluebird';
 import { findUser } from './user';
 
 function findTracks(req: APIRequest): string[] {
@@ -28,21 +15,22 @@ function findTracks(req: APIRequest): string[] {
 
 export default {
     register(app: App) {
-        
-        app.post('api/label/create', async (req, res) => {
+
+        app.post('/api/label/create', async (req, res) => {
             const { name } = req.body;
 
             const randomColor = () => {
                 const [r, g, b] = [0, 0, 0]
-                    .map(c => Math.floor(Math.random() * 256))
+                    .map(() => Math.floor(Math.random() * 256))
                     .map(i => i.toString(16));
                 return `${r}${g}${b}`;
             }
 
-            if (/^[A-Z \-]{4,32}$/i.test(name)) {
+            if (Label.NAME_REG.test(name)) {
                 req.user.createLabel({ name, color: randomColor() })
                     .then(() => res.json({ success: true }))
                     .catch((e: Error) => res.json({ success: false, reason: e.message }));
+
             } else res.json({ success: false, reason: 'Invalid Label Name' })
         });
 
@@ -103,6 +91,29 @@ export default {
             }
         });
 
+        app.post('/api/label/:label/edit', async (req, res) => {
+            const { label: labelID } = req.params;
+
+            const label = await Label.findByPk(labelID);
+            if (!label) return res.status(404).json({ success: false, reason: 'Label not found' });
+            if (label.createdBy !== req.user.id) return res.status(403).json({ success: false, reason: 'Not your label' });
+
+            const { color: color, name } = req.body;
+
+            if (color) {
+                const match = color.toString().match(/#?([a-z0-9]{6})/i);
+                if (!match) return res.status(400).json({ success: false, reason: 'Invalid color code' });
+                await label.update({ color: match[1] });
+            }
+
+            if (name) {
+                if (!Label.NAME_REG.test(name)) return res.status(400).json({ success: false, reason: 'Invalid label name' });
+                await label.update({ name });
+            }
+
+            res.json({ success: true });
+        });
+
         app.get('/api/label/:label', async (req, res) => {
             const { label: labelID } = req.params;
 
@@ -110,7 +121,7 @@ export default {
             if (!label) return res.status(404).json({ success: false, reason: 'Label not found' });
 
             const ids = await req.user.labeledWith(label);
-            const tracks: ITrack[] = ids.length > 0 ? await req.user.api().tracks(...ids) : [];
+            const tracks: ITrack[] = ids.length > 0 ? await req.user.api().tracks(ids) : [];
 
             res.json({ success: true, data: { ...label.toJSON(), tracks } })
         });

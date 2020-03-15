@@ -1,16 +1,17 @@
-import express, { NextFunction } from 'express';
-import { PORT, DEBUG } from './config';
-import chalk from 'chalk';
-import Database from './database';
 import bodyParser from 'body-parser';
+import chalk from 'chalk';
 import cookieParser from 'cookie-parser';
+import express, { NextFunction } from 'express';
+import { ParamsDictionary, Request, Response } from 'express-serve-static-core';
 import { Server } from 'http';
-import { Response, Request, ParamsDictionary } from 'express-serve-static-core';
+import { DEBUG, PORT } from './config';
 import AuthController from './controllers/authorization';
-import UserController from './controllers/user';
 import LabelsController from './controllers/labels';
 import PlaylistController from './controllers/playlists';
 import TrackCOntroller from './controllers/tracks';
+import UserController from './controllers/user';
+import Database from './database';
+import { ValidateError } from './models/Operator';
 import User from './models/User';
 
 export const error = (...s: unknown[]) => console.log(chalk.red('❌ ', ...s));
@@ -34,6 +35,7 @@ type R = {
 } | {
     success: false,
     reason: string,
+    [key: string]: any,
 }
 export type APIResponse = Response<R>;
 export type APIRequest = Request<ParamsDictionary, APIResponse, any> & {
@@ -67,7 +69,7 @@ async function start() {
             })
         });
 
-    } catch(e) {
+    } catch (e) {
         error('Encountered an error on server startup')
         console.log(e);
     }

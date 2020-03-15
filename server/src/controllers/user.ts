@@ -1,22 +1,5 @@
-import { APIResponse, App, success, debug, APIRequest, ApiFunc } from '../index';
-import passport from 'passport';
-import jwt from 'jsonwebtoken';
-import { Strategy } from 'passport-spotify';
-import bcrypt from 'bcrypt';
-import chalk from 'chalk';
-import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET } from '../config';
-import { readSync } from 'fs';
-import { resolveNaptr } from 'dns';
-import session from 'express-session';
-import Api from '../api';
-import { isArray } from 'util';
-import { ITrack, IRule, Operator } from '../../../client/src/models'
-import { Op, where } from 'sequelize';
+import { APIRequest, App } from '../index';
 import User from '../models/User';
-import Label from '../models/Label';
-import Labeled from '../models/Labeled';
-import Playlist, { Rule, Category } from '../models/Playlist';
-import { OperationalError } from 'bluebird';
 
 export async function findUser(req: APIRequest) {
     const { user } = req.params;
@@ -42,11 +25,19 @@ export default {
         });
 
         app.get('/api/user/:user?/playlists', async (req, res) => {
+            const noSpotify = req.query.simple == true;
             const user = await findUser(req);
             if (!user) return res.status(404).json({ success: false, reason: 'User not found' });
 
             const playlists = await user.getPlaylists();
-            res.json({ success: true, data: playlists });
+            if (noSpotify) res.json({ success: true, data: playlists });
+
+            const fetched = await Promise.all(playlists.map(p => p.fetchSpotify()
+                .then(spotify => ({ ...p.toJSON(), spotify }))
+            ));
+            
+            res.json({ success: true, data: fetched });
+
         });
 
         app.get('/api/user/:user?', async (req, res) => {
