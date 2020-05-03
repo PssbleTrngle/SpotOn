@@ -1,6 +1,11 @@
+import { IconProp, IconName } from "@fortawesome/fontawesome-svg-core"
 
 export interface IUser {
   id: string;
+}
+
+export interface WithID {
+  id: number | string,
 }
 
 export interface List<T> {
@@ -9,6 +14,7 @@ export interface List<T> {
 
 export interface ILabel {
   name: string;
+  icon?: IconName;
   id: number;
   color: string;
   tracks?: ITrack[];

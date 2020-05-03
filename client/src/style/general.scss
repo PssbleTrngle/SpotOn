@@ -1,4 +1,5 @@
 $red: rgb(171, 12, 46);
+$red-bright: rgb(207, 24, 63);
 $red-dark: rgb(107, 13, 34);
 $bg: #111;
 $highlight: rgb(47, 211, 88);
@@ -9,15 +10,6 @@ $nav-height: 50px;
 @mixin container($width: 1200px) {
   max-width: $width;
   margin: 0 auto;
-}
-
-@mixin pseudo {
-  content: "";
-  top: 0;
-  left: 0;
-  position: absolute;
-  height: 100%;
-  width: 100%;
 }
 
 @mixin grid {
@@ -34,6 +26,15 @@ $nav-height: 50px;
       grid-area: a#{$i};
     }
   }
+}
+
+@mixin pseudo {
+  content: "";
+  top: 0;
+  left: 0;
+  position: absolute;
+  height: 100%;
+  width: 100%;
 }
 
 $mobile-width: 700px;
@@ -128,6 +129,11 @@ select,
   }
 }
 
+button,
+[role="button"] {
+  cursor: pointer;
+}
+
 input,
 button,
 a[role="button"],
@@ -138,14 +144,20 @@ select {
   cursor: pointer;
 
   &:not(select) {
-    &:first-of-type {
-      border-bottom-left-radius: 1000px;
-      border-top-left-radius: 1000px;
+    &:not(.group):not(.line) {
+      border-radius: 1000px;
     }
 
-    &:last-of-type {
-      border-top-right-radius: 1000px;
-      border-bottom-right-radius: 1000px;
+    &.group {
+      &:first-child {
+        border-bottom-left-radius: 1000px;
+        border-top-left-radius: 1000px;
+      }
+
+      &:last-child {
+        border-top-right-radius: 1000px;
+        border-bottom-right-radius: 1000px;
+      }
     }
   }
 
@@ -160,6 +172,15 @@ select {
 
     &:hover {
       background-color: $highlight-bright;
+    }
+  }
+
+  &.red {
+    background-color: $red;
+    color: white;
+
+    &:hover {
+      background-color: $red-bright;
     }
   }
 
@@ -189,7 +210,14 @@ select {
   }
 }
 
-section {
+input.line {
+  background: transparent;
+  border-radius: 0;
+  border-bottom: #666 solid 1px;
+  min-width: 300px;
+}
+
+.page {
   width: calc(100vw - 40px);
   display: grid;
   justify-content: center;
@@ -220,6 +248,12 @@ select {
   }
 }
 
+.label-icon {
+  color: white;
+  border-radius: 100%;
+  padding: 10px;
+}
+
 .container.labels {
   grid-template:
     "label"
@@ -228,7 +262,20 @@ select {
   .title {
     grid-area: label;
     @include grid();
-    grid-auto-flow: column;
+    grid-template-columns: 1.7fr 9fr repeat(2, 1fr);
+    gap: 10px;
+
+    .label-icon {
+      font-size: 2.5rem;
+    }
+
+    span {
+      position: relative;
+    }
+
+    .label {
+      width: 300px;
+    }
 
     button {
       padding: 12px;
@@ -265,6 +312,7 @@ select {
   white-space: nowrap;
   width: fit-content;
   text-transform: capitalize;
+  transition: width 0.1s linear;
   @include label(7rem);
 
   &.bright {
@@ -300,6 +348,21 @@ select {
     background-color: #333;
     user-select: none;
 
+    width: 200px;
+
+    h4 {
+      max-lines: 2;
+      white-space: nowrap;
+    }
+
+    &.small {
+      width: 100px;
+    }
+
+    &.big {
+      width: 300px;
+    }
+
     &.link:hover {
       @include outline();
     }
@@ -307,7 +370,7 @@ select {
     .labels {
       display: flex;
       height: 2.5rem;
-      margin: 0.3rem;
+      margin: 0.5rem;
       overflow: hidden;
     }
 
@@ -354,8 +417,9 @@ a {
 }
 
 nav {
-  height: $nav-height;
-  background-color: #fff2;
+  height: $nav-height - 2px;
+  background-color: #333;
+  border-bottom: 2px solid #444;
   overflow: hidden;
   vertical-align: baseline;
 
@@ -407,13 +471,11 @@ nav {
     }
 
     &:first-child {
-      border-radius: 0;
       border-top-left-radius: $border;
       border-top-right-radius: $border;
     }
 
     &:last-child {
-      border-radius: 0;
       border-bottom-left-radius: $border;
       border-bottom-right-radius: $border;
     }
@@ -429,22 +491,37 @@ nav {
 
 @keyframes load {
   from {
+    border: 20px solid transparent;
     padding: 10px;
     opacity: 0.6;
   }
   to {
+    border: 0px solid transparent;
     padding: 30px;
     opacity: 1;
   }
 }
 
 .loading {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: $highlight;
-  border-radius: 100%;
+  &.relative {
+    position: relative;
+    margin: 10px auto;
+  }
+
+  &:not(.relative) {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+
+  &::after {
+    @include pseudo();
+    background-color: $highlight;
+    border-radius: 100%;
+  }
+
+  width: fit-content;
   animation: load 0.5s ease-out infinite alternate;
 }
 
@@ -668,7 +745,7 @@ h5 {
   z-index: 200;
   padding: 10px;
   border-radius: 5px;
-  
+
   top: 95%;
   left: 50%;
   transform: translate(-50%, 0);
@@ -691,6 +768,48 @@ h5 {
 
 .editable {
   & + button.primary {
-    transform: translate(-145%, -15%);
+    position: absolute;
+    top: 50%;
+    transform: translate(-145%, -50%);
+  }
+}
+
+.dialog {
+  z-index: 1000;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: $bg;
+  border-radius: 20px;
+
+  display: grid;
+  grid-template:
+    "title title"
+    "yes no"
+    / 1fr 1fr;
+  gap: 10px;
+
+  h1 {
+    grid-area: title;
+  }
+
+  padding: 30px;
+}
+
+.blurred {
+  filter: blur(5px);
+}
+
+.curtain {
+  z-index: 999;
+  position: fixed;
+  width: 100vw;
+  height: 100vh;
+  transition: opacity 0.1s linear;
+
+  &.hidden {
+    opacity: 0;
+    pointer-events: none;
   }
 }

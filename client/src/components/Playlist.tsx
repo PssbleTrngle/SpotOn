@@ -47,7 +47,7 @@ const View = (props: { id: string }) => {
 }
 
 function Playlists() {
-    return useLoading<IPlaylist[]>('user/playlists', playlist => <>
+    return useLoading<IPlaylist[]>('playlist', playlist => <>
         <Link className='primary' role='button' to='/playlists/create'>Create new Playlist</Link>
         <div className='grid'>
             {playlist.map(model =>

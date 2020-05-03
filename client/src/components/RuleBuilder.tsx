@@ -6,7 +6,7 @@ import Rule, { Creator, ICreator } from "./Rule";
 
 export function Builder() {
     const categories = useCategories();
-    const [example, loading] = useApi<IRule>('operators/example');
+    const [example, loading] = useApi<IRule>('operator/example');
 
     const [rule, setRule] = useState<IRule>();
     const [creator, setCreator] = useState<ICreator | undefined>();
@@ -14,8 +14,8 @@ export function Builder() {
 
     const history = useHistory();
 
-    const submit = useSubmit('playlist/create', { rule, name }, id => history.push(`/playlists/${id}`))
-    const validate = useSubmit('playlist/validate', { rule, name })
+    const submit = useSubmit('post', 'playlist', { rule, name }, id => history.push(`/playlists/${id}`))
+    const validate = useSubmit('post', 'playlist/validate', { rule, name })
 
     const valid = validate.valid && submit.valid;
     const error = validate.error ?? submit.error;
@@ -59,7 +59,7 @@ export function Builder() {
     </>;
 }
 export function useOperators() {
-    const [operators, loading] = useApi<IOperator[]>('operators');
+    const [operators, loading] = useApi<IOperator[]>('operator');
     const all = operators ?? [];
     const group = useMemo(() => all.filter(o => o.isGroup), [all]);
 
@@ -218,7 +218,7 @@ class MergeCategory implements ICategoryCreator<IRule, Values> {
 }
 
 export function useCategories(): ICategoryCreator[] {
-    const [labels] = useApi<ILabel[]>('user/labels');
+    const [labels] = useApi<ILabel[]>('label');
     const { group: GroupOperators, find, placeholder } = useOperators();
 
     const has = (values: Values, type: string, text?: string): IRule => {

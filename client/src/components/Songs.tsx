@@ -2,13 +2,11 @@ import classes from 'classnames';
 import React, { memo, ReactText, useEffect, useMemo, useState } from 'react';
 import { Link } from "react-router-dom";
 import API, { Loading, useApi } from "../Api";
-import { IImage, ILabel, ITrack } from "../models";
+import { IImage, ILabel, ITrack, WithID } from "../models";
 import { Image } from './App';
-import { Label } from './Labels';
-
-interface WithID {
-    id: ReactText,
-}
+import { Label, LabelIcon } from './Labels';
+import useSelection, { ISelection } from '../Selection';
+import { IAction, useContextMenu } from './ContextMenu';
 
 export enum Size {
     SMALL = 2,
@@ -16,12 +14,16 @@ export enum Size {
     BIG = 0,
 }
 
+/*
 interface ISelection<O extends WithID> {
     click(e: React.MouseEvent, o?: O): void,
     move(e: React.MouseEvent, o?: O): void,
     isSelected(o: O): boolean,
     getSelected(): O[],
 }
+*/
+
+/*
 function useSelection<O extends WithID>(models: O[]): ISelection<O> {
     const [selected, setSelected] = useState<ReactText[]>([]);
     const [lastSingle, setLastSingle] = useState<ReactText | undefined>();
@@ -68,10 +70,11 @@ function useSelection<O extends WithID>(models: O[]): ISelection<O> {
 
     return { click, isSelected, getSelected, move };
 }
+*/
 
 interface CellProps<T extends { name: string } & WithID> {
-    selection?: ISelection<T>;
-    openContextMenu?: (p?: IPoint) => void;
+    selection?: ISelection<T['id']>;
+    actions?: IAction[];
     model: T;
     size?: Size;
 }
@@ -81,13 +84,14 @@ export const Cell = memo(function <T extends { name: string } & WithID>(props: C
     cover: IImage | IImage[],
     link?: string,
 }) {
-    const { selection, openContextMenu, model, children, link } = props;
-    const selected = selection?.isSelected(model) ?? false;
+    const { selection, actions, model, children, link } = props;
+    const { onContextMenu } = useContextMenu(actions);
+    const selected = selection?.isSelected(model.id) ?? false;
     const size = props.size ?? Size.NORMAL;
     const cover = Array.isArray(props.cover) ? props.cover[size] : props.cover;
 
     const i = <>
-        <Image {...cover} alt={model.name} />
+        <Image url={cover.url} alt={model.name} />
         <h4>{model.name}</h4>
         {children}
     </>
@@ -95,19 +99,9 @@ export const Cell = memo(function <T extends { name: string } & WithID>(props: C
     const c = link ? <Link to={link}>{i}</Link> : i;
 
     return <div
-        style={{ width: cover.width }}
         className={classes('cell', { selected, link }, Size[size].toLowerCase())}
-        onMouseMove={e => selection?.move(e, model)}
-        onClick={e => {
-            if (openContextMenu) openContextMenu();
-            selection?.click(e, model);
-        }}
-        onContextMenu={e => {
-            const { clientX: x, clientY: y } = e;
-            if (openContextMenu) openContextMenu({ x, y })
-            selection?.click(e, model);
-            e.preventDefault();
-        }}
+        {...selection?.events(model.id)}
+        {...{ onContextMenu }}
     >{c}</div>
 });
 
@@ -118,65 +112,16 @@ const Track = memo((props: CellProps<ITrack>) => {
     return <Cell {...props} cover={cover} >
         <div className='labels'>
             {labels.map(label =>
-                <Label size={Size.SMALL} key={label.id} {...label} />
+                <LabelIcon key={label.id} {...label} />
+                /*<Label size={Size.SMALL} key={label.id} {...label} />*/
             )}
         </div>
     </Cell>
 });
 
-interface IPoint {
-    x: number;
-    y: number;
-}
-
-type SongList = Array<{
+interface ISavedTrack {
     track: ITrack;
     added_at: string;
-}>;
-
-export type IAction = {
-    display: string,
-    className?: string,
-} & ({
-    apply: () => void
-} | {
-    children: IAction[]
-})
-
-export const ContextMenu = (props: { actions: IAction[], point: IPoint }) => {
-    const { actions, point } = props;
-    const [active, setActive] = useState<IAction[]>(actions);
-
-    useEffect(() => setActive(actions), [point]);
-
-    function isParent(a: IAction): a is IAction & { children: IAction[] } {
-        return Array.isArray((a as any).children);
-    }
-
-    return (
-        <div className='contextmenu' style={{
-            top: point.y,
-            left: point.x,
-        }}>
-            {active.map((a, i) => {
-                const parent = isParent(a);
-
-                return (
-                    <button
-                        key={i}
-                        className={classes({ parent }, a.className)}
-                        onClick={e => {
-                            e.stopPropagation();
-                            e.preventDefault();
-
-                            if (isParent(a)) setActive(a.children);
-                            else a.apply();
-
-                        }}>{a.display}</button>
-                );
-            })}
-        </div>
-    )
 }
 
 const sortByDate = (a: { added_at: string }, b: { added_at: string }) => {
@@ -200,13 +145,23 @@ function getMatches(tracks: ITrack[], label: ILabel) {
     return MatchType.NONE;
 }
 
-export const TrackList = memo(({ tracks, size }: { tracks: ITrack[], size?: Size }) => {
-    const [labels] = useApi<ILabel[]>('user/labels');
+
+export function useEvent<E extends Event>(event: keyof WindowEventMap, listener: (e: E) => unknown) {
+    useEffect(() => {
+        //@ts-ignore
+        window.addEventListener(event, listener);
+        //@ts-ignore
+        return () => window.removeEventListener(event, listener);
+    })
+}
+
+export const TrackList = memo((props: { tracks: ITrack[], size?: Size, load?: () => void, loading?: boolean }) => {
+    const [labels] = useApi<ILabel[]>('label');
+    const { tracks, size, load, loading } = props;
 
     const selection = useSelection(tracks);
-    const selected = selection.getSelected();
-    const ids = selected.map(t => t.id);
-    const [contextMenu, openContextMenu] = useState<IPoint | undefined>();
+    const selected = useMemo(() => tracks.filter(t => selection.selected.has(t.id)), [selection.selected])
+    const { close, active } = useContextMenu();
 
     const addLabel: ILabel[] = [];
     const removeLabel: ILabel[] = [];
@@ -217,53 +172,101 @@ export const TrackList = memo(({ tracks, size }: { tracks: ITrack[], size?: Size
         if (match !== MatchType.ALL) addLabel.push(label);
     })
 
-    const actions: IAction[] = [
-        {
-            display: 'Add Label', children: addLabel.map(l => ({
-                display: l.name, apply: () => API.post('track/add-label', { label: l.id, tracks: ids })
-            }))
-        },
-        {
-            display: 'Remove Label', children: removeLabel.map(l => ({
-                display: l.name, apply: () => API.post('track/remove-label', { label: l.id, tracks: ids })
-            }))
-        }
-    ];
+    const actions: IAction[] = [];
+
+    if (addLabel.length > 0) actions.push({
+        display: 'Add Label', children: addLabel.map(l => ({
+            display: l.name, apply: () => API.post('track/label', { label: l.id, tracks: selected.map(t => t.id) })
+        }))
+    });
+
+    if (removeLabel.length > 0) actions.push({
+        display: 'Remove Label', children: removeLabel.map(l => ({
+            display: l.name, apply: () => API.delete('track/label', { label: l.id, tracks: selected.map(t => t.id) })
+        }))
+    });
+
+    useEvent('mousewheel', (e: WheelEvent) => {
+        const total = document.body.offsetHeight;
+        const { innerHeight, scrollY } = window;
+        const y = (innerHeight + scrollY) - total;
+
+        if (e.deltaY > 0 && y >= -200 && !loading && load) load();
+    });
+
+    const [search, setSearch] = useState('');
+
+    const shown = useMemo(() => tracks.filter(({ name, album, artists }) =>
+        search.length == 0 || [name, album.name, ...artists.map(a => a.name)]
+            .map(s => s.toLowerCase())
+            .some(s => s.includes(search.toLowerCase()))
+    ), [search, tracks])
 
     return (
-        <div onClick={e => {
-            selection.click(e);
-            openContextMenu(undefined);
-        }} style={{ gridArea: 'tracks' }}>
-            <h1>{selected.length
-                ? `${selected.length} selected`
-                : `${tracks.length}`
-            } tracks</h1>
+        <div
+            onClick={active ? close : selection.clear}
+            style={{ gridArea: 'tracks' }}>
 
-            {contextMenu && <ContextMenu point={contextMenu} {...{ actions }} />}
+            {tracks.length > 0 && <input
+                className='line'
+                type='text'
+                placeholder='Search'
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+            />}
 
             <div className='grid'>
-                {tracks && tracks.map(model =>
+                {shown.map(model =>
                     <Track
                         key={model.id}
                         {...{ size }}
-                        {...{ model, selection, openContextMenu }}
+                        {...{ model, selection, actions }}
                     />
                 )}
             </div>
-        </div>
+            {loading && <Loading relative />}
+        </div >
     )
 
-});
+})
+
+export type Scroller<T> = {
+    loaded: T[],
+    load: () => void,
+    loading: boolean
+};
+
+function useScroller<T>(endpoint: string, limit: number): Scroller<T> {
+    const [loaded, setLoaded] = useState<T[]>([]);
+    const [loading, setLoading] = useState(false);
+    const [offset, setOffset] = useState(0);
+
+    const load = () => {
+        setLoading(true);
+        setOffset(o => o + limit);
+
+        API.fetch<T[]>(endpoint, { limit, offset })
+            .then(l => {
+                if (l) setLoaded(o => [...o, ...l]);
+                else throw new Error('No result returned');
+            })
+            .catch(e => console.error(e))
+            .finally(() => setLoading(false));
+    }
+
+    useEffect(() => {
+        load();
+    }, []);
+
+    return { loaded, load, loading };
+}
 
 function Songs() {
-    const [saved, loading] = useApi<SongList>('user/saved', { limit: 50 });
+    const { loaded, load, loading } = useScroller<ISavedTrack>('saved', 30);
 
-    const items = saved ?? [];
-    const tracks = items.map(item => item.track);
+    const tracks = useMemo(() => loaded.map(item => item.track), [loaded]);
 
-    if (loading) return <Loading />
-    return <TrackList {...{ tracks }} />
+    return <TrackList {...{ tracks, load, loading }} />
 }
 
 export default Songs;

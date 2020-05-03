@@ -1,13 +1,26 @@
+import {
+    faBirthdayCake, faDrum, faEdit, faBomb, faHeadphones, faMusic, faPlus, faQuestion, faAtom, faSave, faTrash, faGuitar, faRecordVinyl, faCompactDisc, faGlassCheers, faBiohazard, faBolt, faBrain,
+    faBurn, faCannabis, faCandyCane,
+} from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome';
 import classes from 'classnames';
-import React, { memo, MouseEvent, useState, InputHTMLAttributes, useMemo, useEffect } from 'react';
-import { Link, useLocation, useParams } from "react-router-dom";
-import API, { useLoading, useSubmit, useApi, Loading } from "../Api";
+import React, { InputHTMLAttributes, memo, MouseEvent, useEffect, useMemo, useState } from 'react';
+import { Link, useHistory, useLocation, useParams } from "react-router-dom";
+import { CSSTransition } from 'react-transition-group';
+import API, { Loading, useApi, useLoading, useSubmit } from "../Api";
 import { ILabel } from "../models";
 import { ColorPicker } from './Color';
+import { useDialog } from './Dialog';
 import { Size, TrackList } from "./Songs";
-import { CSSTransition } from 'react-transition-group';
-import { FontAwesomeIcon as Icon } from '@fortawesome/react-fontawesome'
-import { faFillDrip, faSave } from '@fortawesome/free-solid-svg-icons'
+import { library } from '@fortawesome/fontawesome'
+
+const I = [
+    faMusic, faBirthdayCake, faDrum, faHeadphones, faGuitar, faRecordVinyl, faCompactDisc, faGlassCheers,
+    faBiohazard, faAtom, faBolt, faBrain, faBomb, faBurn, faCannabis, faCandyCane,
+];
+//@ts-ignore
+library.add(...I, faQuestion);
+const ICONS = I.map(i => i.iconName).sort(() => Math.random() - 0.5);
 
 function getBrighness(color: string) {
     const [r1, r2, g1, g2, b1, b2] = color.split('');
@@ -40,11 +53,29 @@ export const Editable = (
     </>
 }
 
+export const LabelIcon = memo(({ icon, color, cycleIcon, name }: ILabel & { cycleIcon?: () => void }) => {
+
+    const displayIcon = icon ?? faQuestion.iconName;
+
+    return (
+        <span className='label-icon' style={{ backgroundColor: `#${color}` }} title={name}>
+            <Icon
+                icon={displayIcon}
+                role={cycleIcon ? 'button' : undefined}
+                onClick={e => {
+                    e.preventDefault();
+                    if (cycleIcon) cycleIcon();
+                }}
+            />
+        </span>
+    );
+})
+
 export const Label = memo((props: ILabel & { size?: Size, edit?: boolean }) => {
-    const { color, id, edit } = props;
+    const { color, id, edit, icon } = props;
 
     const [name, setName] = useState('');
-    const { post, valid, inProgress } = useSubmit(`label/${id}/edit`, { name, color })
+    const { post, valid, inProgress } = useSubmit('put', `label/${id}`, { name, color, icon })
 
     useEffect(() => {
         setName(props.name);
@@ -85,29 +116,44 @@ function Creator() {
         e.preventDefault();
         const valid = /^[A-Z -]{4,32}$/i.test(name);
         setInvalid(!valid);
-        if (valid) API.post('label/create', { name });
+        if (valid) API.post('label', { name });
     }
 
     return (
         <div>
             <input
-                className={classes({ invalid })}
+                className={classes('group', { invalid })}
                 type='text'
                 placeholder='New Label'
                 value={name}
                 onChange={e => change(e.target.value)}
             />
-            <input value='+' type='submit' onClick={create} />
+            <button className='group primary' type='submit' onClick={create}>
+                <Icon icon={faPlus} />
+            </button>
         </div>
     )
 }
 
-const View = (props: { id: string }) => {
+const View = ({ id }: { id: string }) => {
     const [c1, setColor] = useState<string>()
-    const [showPicker, setPicker] = useState(false);
-    const togglePicker = () => setPicker(!showPicker);
 
-    const [l, loading] = useApi<ILabel>(`label/${props.id}`);
+    const [i1, setIcon] = useState<number>();
+    const cycleIcon = () => setIcon(i => ((i ?? 0) + 1) % ICONS.length);
+
+    const [edit, setEdit] = useState(false);
+    const toggleEdit = () => setEdit(!edit);
+    useEffect(() => {
+        if (!edit) {
+            setColor(undefined);
+            setIcon(undefined);
+        }
+    }, [edit]);
+
+    const { open } = useDialog();
+    const history = useHistory();
+
+    const [l, loading] = useApi<ILabel>(`label/${id}`);
 
     useEffect(() => {
         if (l) setColor(l.color);
@@ -116,18 +162,34 @@ const View = (props: { id: string }) => {
     if (loading) return <Loading />
     if (!l) return <span>Not found</span>
 
-    const { tracks, color: c2, ...label } = l;
+    const { tracks, color: c2, icon: i2, ...label } = l;
     const color = c1 ?? c2;
+    const icon = i1 !== undefined ? ICONS[i1] : i2;
+
+    const askDelete = () => open({
+        text: 'Delete label?', action: () => {
+            API.delete(`label/${id}`)
+                .then(() => history.push('/labels'))
+        }
+    });
 
     return <>
         <div className='title'>
-            <Label edit={true} size={Size.BIG} {...label} {...{ color }} />
-            <button onClick={togglePicker}>
-                <Icon icon={faFillDrip} />
+
+            <LabelIcon {...label} cycleIcon={edit ? cycleIcon : undefined} {...{ color, icon }} />
+            <Label size={Size.BIG} {...label} {...{ color, edit, icon }} />
+
+            <button onClick={toggleEdit}>
+                <Icon icon={faEdit} />
             </button>
+
+            {edit && <button onClick={askDelete} className='red'>
+                <Icon icon={faTrash} />
+            </button>}
+
         </div>
 
-        <CSSTransition in={showPicker} timeout={300}>
+        <CSSTransition in={edit} timeout={300}>
             <ColorPicker {...{ color, setColor }} />
         </CSSTransition>
 
@@ -136,12 +198,12 @@ const View = (props: { id: string }) => {
 }
 
 function LabelList() {
-    return useLoading<ILabel[]>('user/labels', labels => <>
+    return useLoading<ILabel[]>('label', labels => <div>
         <Creator />
         <ul>
             {labels.map(label => <Label key={label.id} {...label} />)}
         </ul>
-    </>)
+    </div>)
 }
 
 function Labels() {

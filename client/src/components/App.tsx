@@ -6,12 +6,13 @@ import { BrowserRouter as Router, Redirect, Route, Switch, useLocation } from 'r
 import { Loading, useApi } from '../Api';
 import { IImage, IUser } from '../models';
 import '../style/general.scss';
-import { Curtain, Dialog, Provider, useDialogProvider } from './Dialog';
+import { Curtain, Dialog, Provider as DialogProvider, useDialogProvider } from './Dialog';
 import Labels from './Labels';
 import Navbar from './Navbar';
 import Playlist from './Playlist';
-import Songs from './Songs';
+import Songs, { useEvent } from './Songs';
 import Builder from './RuleBuilder';
+import { Provider as ContextMenuProvider, useContextMenuProvider, ContextMenu, useContextMenu } from './ContextMenu';
 
 const UserContext = React.createContext<IUser | null>(null);
 export function useUser(): IUser | never {
@@ -31,6 +32,7 @@ export function unique<T>(t: T, i: number, a: T[]) {
 function App() {
    const [user, loading] = useApi<IUser>('user');
    const [dialog, setDialog] = useDialogProvider();
+   const [contextMenu, setContextMenu] = useContextMenuProvider();
 
    useEffect(() => {
       if (!user && !loading) window.open('http://localhost:8080/login', '_self');
@@ -40,17 +42,23 @@ function App() {
       <>
          {user ?
             <UserContext.Provider value={user}>
-               <Provider value={setDialog}>
-                  <Router>
+               <DialogProvider value={setDialog}>
+                  <ContextMenuProvider value={[contextMenu, setContextMenu]}>
+                     <Router>
 
-                     {dialog && <Dialog {...dialog} />}
-                     <Curtain hidden={!dialog} />
+                        {dialog && <Dialog {...dialog} />}
+                        <Curtain hidden={!dialog} />
 
-                     <Navbar />
-                     <Section />
+                        <section className={classes({ blurred: !!dialog })}>
+                           <Navbar />
+                           <Section />
 
-                  </Router>
-               </Provider>
+                           {contextMenu && <ContextMenu {...contextMenu} />}
+                        </section>
+
+                     </Router>
+                  </ContextMenuProvider>
+               </DialogProvider>
             </UserContext.Provider>
 
             : <Loading />
@@ -108,9 +116,14 @@ function Page({ page }: { page: IPage }) {
 }
 
 function Section() {
+   const { close } = useContextMenu();
+
+   useEvent('keyup', (e: KeyboardEvent) => {
+      if (e.keyCode === 27) close();
+   })
 
    return (
-      <section>
+      <section className='page' onClick={close}>
          <Switch>
 
             {pages.map(page =>
