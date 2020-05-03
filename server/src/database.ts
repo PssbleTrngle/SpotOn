@@ -1,11 +1,11 @@
 import { Sequelize } from 'sequelize';
 import { info, success } from '.';
-import { DEBUG, FORCE_DB as FLUSH_DB } from './config';
+import { FORCE_DB as FLUSH_DB } from './config';
 import Label from './models/Label';
 import Labeled from './models/Labeled';
 import Playlist from './models/Playlist';
-import User from './models/User';
 import Rule, { Category, Value } from "./models/Rule";
+import User from './models/User';
 
 require('sequelize-hierarchy')(Sequelize);
 const sequelize = new Sequelize({
@@ -32,7 +32,7 @@ export default {
             await setKeyContraints(false);
         }
 
-        await sequelize.sync({ force: FLUSH_DB, alter: DEBUG });
+        await sequelize.sync({ force: FLUSH_DB, alter: FLUSH_DB });
         await setKeyContraints(true);
 
         success('Database running');

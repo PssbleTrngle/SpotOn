@@ -9,11 +9,26 @@ export async function findUser(req: APIRequest) {
 export default {
     register(app: App) {
 
+        app.get('/api/saved', async (req, res) => {
+
+            const { limit, offset } = req.query;
+            req.user.api().saved(limit, offset)
+                .then(data => res.json({ success: true, data }))
+                .catch(e => res.status(500).json({ success: false, reason: e.message }))
+        });
+
+        app.get('/api/tracks', async (req, res) => {
+
+            req.user.allTracks()
+                .then(data => res.json({ success: true, data }))
+                .catch(e => res.status(500).json({ success: false, reason: e.message }))
+        });
+
         app.get('/api/track/:id/features/', async (req, res) => {
             const { id } = req.params;
             req.user.api().features(id)
                 .then(data => res.json({ success: true, data }))
-                .catch(e => res.status(505).json({ success: false, reason: e.message }))
+                .catch(e => res.status(500).json({ success: false, reason: e.message }))
         });
 
     }

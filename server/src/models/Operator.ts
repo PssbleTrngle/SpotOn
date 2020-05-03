@@ -1,9 +1,7 @@
-import { IOperator, ITrack, IRule, ICategory } from "../../../client/src/models";
-import { Category } from "./Rule";
-import { exists, debug } from "..";
-import CategoryType, { findCategory, Type, FilterResult } from "./Category";
+import { exists } from "..";
+import { ICategory, IOperator, IRule, ITrack } from "../../../client/src/models";
 import Api from "../api";
-import { Cipher } from "crypto";
+import CategoryType, { FilterResult, findCategory, Type } from "./Category";
 
 interface IVRule extends IRule {
     level: number;

@@ -11,7 +11,6 @@ import PlaylistController from './controllers/playlists';
 import TrackCOntroller from './controllers/tracks';
 import UserController from './controllers/user';
 import Database from './database';
-import { ValidateError } from './models/Operator';
 import User from './models/User';
 
 export const error = (...s: unknown[]) => console.log(chalk.red('❌ ', ...s));
@@ -45,6 +44,8 @@ export type ApiFunc<R extends Request = APIRequest> = (req: R, res: APIResponse,
 export type App = {
     get(url: string, ...func: ApiFunc[]): unknown,
     post(url: string, ...func: ApiFunc[]): unknown,
+    delete(url: string, ...func: ApiFunc[]): unknown,
+    put(url: string, ...func: ApiFunc[]): unknown,
     use(url: string, ...func: ApiFunc[]): unknown,
 } & express.Express;
 

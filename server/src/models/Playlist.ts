@@ -1,27 +1,26 @@
-import { Association, HasOneGetAssociationMixin, INTEGER, Model, Sequelize, STRING } from "sequelize";
+import { Association, HasOneGetAssociationMixin, INTEGER, Sequelize, STRING } from "sequelize";
 import { warn } from "..";
 import { IPlaylist } from "../../../client/src/models";
+import OwnerModel from "./OwnerModel";
 import Rule from "./Rule";
 import User from "./User";
 
-export default class Playlist extends Model {
+export default class Playlist extends OwnerModel {
 
     public id!: number;
 
     public spotifyID!: string | null;
     public name!: string;
 
-    public userID!: string;
     public ruleID!: number;
 
     public rule?: Rule;
 
-    public getUser!: HasOneGetAssociationMixin<User>;
     public getRule!: HasOneGetAssociationMixin<Rule>;
 
     public static associations: {
-        user: Association<Playlist, User>;
         rule: Association<Playlist, Rule>;
+        user: Association<OwnerModel, User>;
     };
 
     public async findTracks() {

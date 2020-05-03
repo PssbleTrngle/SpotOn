@@ -1,10 +1,10 @@
-import { App, APIRequest } from '../index';
-import { isArray } from 'util';
-import { ITrack } from '../../../client/src/models'
 import { Op } from 'sequelize';
+import { isArray } from 'util';
+import { ITrack } from '../../../client/src/models';
+import { APIRequest, App } from '../index';
 import Label from '../models/Label';
 import Labeled from '../models/Labeled';
-import { findUser } from './user';
+import { findModel } from './resource';
 
 function findTracks(req: APIRequest): string[] {
     const { tracks, track } = req.body;
@@ -16,7 +16,7 @@ function findTracks(req: APIRequest): string[] {
 export default {
     register(app: App) {
 
-        app.post('/api/label/create', async (req, res) => {
+        app.post('/api/label', async (req, res) => {
             const { name } = req.body;
 
             const randomColor = () => {
@@ -34,7 +34,7 @@ export default {
             } else res.json({ success: false, reason: 'Invalid Label Name' })
         });
 
-        app.post('/api/track/add-label', async (req, res) => {
+        app.post('/api/track/label', async (req, res) => {
             const { label: labelID } = req.body;
 
             try {
@@ -55,7 +55,7 @@ export default {
 
         })
 
-        app.post('/api/track/remove-label', async (req, res) => {
+        app.delete('/api/track/label', async (req, res) => {
             const { label: labelID } = req.body;
 
             try {
@@ -66,7 +66,7 @@ export default {
 
                 const data = Labeled.destroy({
                     where: {
-                        labeledBy: req.user.id,
+                        userID: req.user.id,
                         labelID: label.id,
                         songID: { [Op.in]: tracks },
                     }
@@ -79,26 +79,18 @@ export default {
 
         });
 
-        app.get('/api/user/:user?/labels/:track?', async (req, res) => {
+        app.get('/api/track/:track/label', async (req, res) => {
             const { track } = req.params;
-            const user = await findUser(req);
-            if (!user) return res.status(404).json({ success: false, reason: 'User not found' });
-
-            if (track) {
-                res.json({ success: true, data: await user.labelsFor(track) })
-            } else {
-                res.json({ success: true, data: await user.getLabels() })
-            }
+            res.json({ success: true, data: await req.user.labelsFor(track) })
         });
 
-        app.post('/api/label/:label/edit', async (req, res) => {
-            const { label: labelID } = req.params;
+        app.get('/api/label', async (req, res) => {
+            res.json({ success: true, data: await Label.findAll({ where: { userID: req.user.id } }) })
+        });
 
-            const label = await Label.findByPk(labelID);
-            if (!label) return res.status(404).json({ success: false, reason: 'Label not found' });
-            if (label.createdBy !== req.user.id) return res.status(403).json({ success: false, reason: 'Not your label' });
-
-            const { color: color, name } = req.body;
+        app.put('/api/label/:id', findModel(Label, async (req, res) => {
+            const label = req.model;
+            const { color: color, name, icon } = req.body;
 
             if (color) {
                 const match = color.toString().match(/#?([a-z0-9]{6})/i);
@@ -111,20 +103,26 @@ export default {
                 await label.update({ name });
             }
 
+            if (icon) {
+                await label.update({ icon });
+            }
+
             res.json({ success: true });
-        });
+        }));
 
-        app.get('/api/label/:label', async (req, res) => {
-            const { label: labelID } = req.params;
+        app.delete('/api/label/:id', findModel(Label, async (req, res) => {
+            await req.model.destroy();
+            res.json({ success: true });
+        }));
 
-            const label = await Label.findByPk(labelID);
-            if (!label) return res.status(404).json({ success: false, reason: 'Label not found' });
+        app.get('/api/label/:id', findModel(Label, async (req, res) => {
+            const label = req.model;
 
             const ids = await req.user.labeledWith(label);
             const tracks: ITrack[] = ids.length > 0 ? await req.user.api().tracks(ids) : [];
 
             res.json({ success: true, data: { ...label.toJSON(), tracks } })
-        });
+        }));
 
     }
 }

@@ -1,33 +1,42 @@
-import { App, ApiFunc } from '../index';
-import { Operators, GroupOperator } from '../models/Operator';
+import l from 'lodash';
+import { IRule, Stats } from '../../../client/src/models';
+import { ApiFunc, App } from '../index';
+import { Type } from '../models/Category';
+import { GroupOperator, Operators } from '../models/Operator';
 import Playlist from '../models/Playlist';
 import Rule from '../models/Rule';
-import { IRule, Stats } from '../../../client/src/models';
-import l from 'lodash';
-import { Type } from '../models/Category';
+import { findModel } from './resource';
 
 export default {
     register(app: App) {
 
-        app.get('/api/playlist/:playlist', async (req, res) => {
-            const playlist = await Playlist.scope('full').findByPk(req.params.playlist);
-            if (!playlist) return res.status(404).json({ success: false, reason: 'Playlist not found' });
+        app.get('/api/playlist', async (req, res) => {
+            const noSpotify = req.query.simple == true;
 
-            res.json({ success: true, data: await playlist.fetchData() });
+            const playlists = await req.user.getPlaylists();
+            if (noSpotify) res.json({ success: true, data: playlists });
+
+            const fetched = await Promise.all(playlists.map(p => p.fetchSpotify()
+                .then(spotify => ({ ...p.toJSON(), spotify }))
+            ));
+            
+            res.json({ success: true, data: fetched });
         });
 
-        app.post('/api/playlist/:playlist/sync', async (req, res) => {
-            const playlist = await Playlist.scope('full').findByPk(req.params.playlist);
-            if (!playlist) return res.status(404).json({ success: false, reason: 'Playlist not found' });
+        app.get('/api/playlist/:id', findModel(Playlist, 'full', async (req, res) => {
+            res.json({ success: true, data: await req.model.fetchData() });
+        }));
+
+        app.post('/api/playlist/:id/sync', findModel(Playlist, 'full', async (req, res) => {
             try {
-                await playlist.sync();
+                await req.model.sync();
                 res.json({ success: true });
             } catch (e) {
                 res.status(500).send({ success: false, reason: e.message });
             }
-        });
+        }));
 
-        app.get('/api/operators/example', async (req, res) => {
+        app.get('/api/operator/example', async (req, res) => {
             const labels = await req.user.getLabels();
             const label = (c: number) => l.shuffle([
                 ...labels.map(Rule.forLabel)
@@ -50,7 +59,7 @@ export default {
 
         });
 
-        app.get('/api/operators', (_, res) => {
+        app.get('/api/operator', (_, res) => {
             res.json({ success: true, data: Operators })
         });
 
@@ -71,7 +80,7 @@ export default {
             res.json({ success: true })
         );
 
-        app.post('/api/playlist/create', validateRule, async (req, res) => {
+        app.post('/api/playlist', validateRule, async (req, res) => {
             const { rule: irule, name } = req.body;
 
             try {
@@ -88,6 +97,11 @@ export default {
             }
 
         })
+
+        app.delete('/api/playlist/:id', findModel(Playlist, async (req, res) => {
+            await req.model.destroy();
+            res.json({ success: true });
+        }));
 
     }
 }

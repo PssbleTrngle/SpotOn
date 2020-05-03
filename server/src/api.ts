@@ -1,14 +1,14 @@
-import { debug, error } from ".";
-import axios, { AxiosRequestConfig, AxiosInstance, AxiosError } from 'axios';
-import { API_URL } from "./config";
-import chalk = require("chalk");
-import User from "./models/User";
+import axios, { AxiosError, AxiosInstance } from 'axios';
 import querystring from 'querystring';
-import { ITrack, IFeatures, ISpotify, Stats } from "../../client/src/models";
+import { debug, error } from ".";
+import { IFeatures, ILabel, ISpotify, ITrack, Stats } from "../../client/src/models";
+import { API_URL } from "./config";
 import Playlist from "./models/Playlist";
+import User from "./models/User";
+import chalk = require("chalk");
 
 const fetchLabels = async (track: ITrack, user: User): Promise<ITrack> => {
-    const labels = await user.labelsFor(track.id);
+    const labels = await user.labelsFor(track.id) as ILabel[];
     return { ...track, labels }
 }
 

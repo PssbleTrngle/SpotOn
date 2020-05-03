@@ -1,6 +1,6 @@
+import { warn } from "..";
 import { ITrack } from "../../../client/src/models";
 import Api from "../api";
-import { warn } from "..";
 
 type Filter<T> = (track: ITrack, values: { [key: string]: string }, api: Api) => T;
 

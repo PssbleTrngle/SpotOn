@@ -1,12 +1,12 @@
-import { Model, HasOneGetAssociationMixin, Association, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, Sequelize, STRING, INTEGER } from "sequelize";
+import chalk from "chalk";
+import l from "lodash";
+import { Association, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, INTEGER, Model, Sequelize, STRING } from "sequelize";
+import { debug } from "..";
+import { IUser } from "../../../client/src/models";
+import Api from "../api";
 import Label from "./Label";
 import Labeled from "./Labeled";
-import { IUser } from "../../../client/src/models";
 import Playlist from "./Playlist";
-import Api from "../api";
-import l from "lodash";
-import chalk from "chalk";
-import { debug } from "..";
 
 export default class User extends Model implements IUser {
 
@@ -24,7 +24,7 @@ export default class User extends Model implements IUser {
     public async labelsFor(songID: string) {
         const labeled = await Labeled.findAll({
             where: {
-                songID, labeledBy: this.id
+                songID, userID: this.id
             }
         });
 
@@ -34,7 +34,7 @@ export default class User extends Model implements IUser {
     public async labeledWith(label: Label) {
         const labeled = await Labeled.findAll({
             where: {
-                labelID: label.id, labeledBy: this.id
+                labelID: label.id, userID: this.id
             }
         });
 
@@ -42,7 +42,7 @@ export default class User extends Model implements IUser {
     }
 
     public async label(songID: string, label: Label) {
-        return Labeled.create({ songID, labeledBy: this.id, labelID: label.id })
+        return Labeled.create({ songID, userID: this.id, labelID: label.id })
     }
 
     public api() {
@@ -98,20 +98,26 @@ export default class User extends Model implements IUser {
     static relations() {
         User.hasMany(Label, {
             sourceKey: 'id',
-            foreignKey: 'createdBy',
-            as: 'labels'
+            foreignKey: 'userID',
+            as: 'labels',
+            hooks: true,
+            onDelete: 'CASCADE',
         });
 
         User.hasMany(Labeled, {
             sourceKey: 'id',
-            foreignKey: 'labeledBy',
-            as: 'labeled'
+            foreignKey: 'userID',
+            as: 'labeled',
+            hooks: true,
+            onDelete: 'CASCADE',
         });
 
         User.hasMany(Playlist, {
             sourceKey: 'id',
             foreignKey: 'userID',
             as: 'playlists',
+            hooks: true,
+            onDelete: 'CASCADE',
         });
 
     }

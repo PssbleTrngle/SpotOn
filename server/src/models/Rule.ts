@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Association, CreateOptions, HasOneSetAssociationMixin, INTEGER, Model, Sequelize, STRING, VIRTUAL } from "sequelize";
 import { warn } from "..";
-import { ICategory, ILabel, IRule, ITrack, IValue } from "../../../client/src/models";
+import { ICategory, IRule, ITrack, IValue } from "../../../client/src/models";
 import Api from "../api";
 import Operator, { findOperator } from "./Operator";
 
@@ -187,8 +187,7 @@ class Rule extends Model implements IRule {
         }
     }
 
-    static forLabel(label: ILabel): IRule {
-        const operator = findOperator('has');
+    static forLabel(label: { name: string, id: number }): IRule {
         return Rule.has('label', label.name, {
             labelID: label.id.toString()
         });

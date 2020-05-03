@@ -1,18 +1,19 @@
-import { Model, HasOneGetAssociationMixin, Association, Sequelize, INTEGER, STRING } from "sequelize";
+import { Association, HasOneGetAssociationMixin, INTEGER, Sequelize, STRING } from "sequelize";
 import Label from "./Label";
+import OwnerModel from "./OwnerModel";
 import User from "./User";
 
-export default class Labeled extends Model {
+export default class Labeled extends OwnerModel {
 
     public id!: number;
     public songID!: string;
     public labelID!: number;
-    public labeledBy!: string;
 
     public getLabel!: HasOneGetAssociationMixin<Label>;
 
     public static associations: {
         label: Association<Labeled, Label>;
+        user: Association<OwnerModel, User>;
     };
 
     static setup(sequelize: Sequelize) {
@@ -31,15 +32,15 @@ export default class Labeled extends Model {
                 type: INTEGER(),
                 allowNull: false,
             },
-            labeledBy: {
+            userID: {
                 type: STRING(64),
-                allowNull: true,
+                allowNull: false,
             },
         }, {
             sequelize, tableName: 'labeled', defaultScope: {
                 include: ['label']
             }, indexes: [{
-                fields: ['songID', 'labelID', 'labeledBy'],
+                fields: ['songID', 'labelID', 'userID'],
                 unique: true,
             }]
         });
@@ -48,7 +49,7 @@ export default class Labeled extends Model {
     static relations() {
         Labeled.belongsTo(User, {
             targetKey: 'id',
-            foreignKey: 'labeledBy',
+            foreignKey: 'userID',
         });
 
         Labeled.belongsTo(Label, {
