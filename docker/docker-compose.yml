@@ -9,7 +9,6 @@ services:
     volumes: 
       - ./db:/server/db
       - ./public:/client
-    command: npm run run
     build:
       context: ../server
       dockerfile: ../docker/server.dockerfile
