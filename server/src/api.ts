@@ -1,7 +1,7 @@
 import axios, { AxiosError, AxiosInstance } from 'axios';
 import querystring from 'querystring';
 import { debug, error } from ".";
-import { IFeatures, ILabel, ISpotify, ITrack, Stats } from "../../client/src/models";
+import { IFeatures, ILabel, ISpotify, ITrack, Stats } from "./models";
 import { API_URL } from "./config";
 import Playlist from "./models/Playlist";
 import User from "./models/User";

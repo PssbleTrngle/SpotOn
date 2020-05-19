@@ -11,7 +11,12 @@ export default {
 
         app.get('/api/saved', async (req, res) => {
 
-            const { limit, offset } = req.query;
+            const limit = Number.parseInt(req.query.limit.toString());
+            const offset = Number.parseInt(req.query.offset.toString());
+
+            if (isNaN(offset)) return res.status(403).send({ success: false, reason: 'Invalid offset' })
+            if (isNaN(limit)) return res.status(403).send({ success: false, reason: 'Invalid limit' })
+
             req.user.api().saved(limit, offset)
                 .then(data => res.json({ success: true, data }))
                 .catch(e => res.status(500).json({ success: false, reason: e.message }))

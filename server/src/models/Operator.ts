@@ -1,5 +1,5 @@
 import { exists } from "..";
-import { ICategory, IOperator, IRule, ITrack } from "../../../client/src/models";
+import { ICategory, IOperator, IRule, ITrack } from "../models";
 import Api from "../api";
 import CategoryType, { FilterResult, findCategory, Type } from "./Category";
 

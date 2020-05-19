@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { Association, CreateOptions, HasOneSetAssociationMixin, INTEGER, Model, Sequelize, STRING, VIRTUAL } from "sequelize";
 import { warn } from "..";
-import { ICategory, IRule, ITrack, IValue } from "../../../client/src/models";
+import { ICategory, IRule, ITrack, IValue } from "../models";
 import Api from "../api";
 import Operator, { findOperator } from "./Operator";
 

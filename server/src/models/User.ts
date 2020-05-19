@@ -2,7 +2,7 @@ import chalk from "chalk";
 import l from "lodash";
 import { Association, HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, INTEGER, Model, Sequelize, STRING } from "sequelize";
 import { debug } from "..";
-import { IUser } from "../../../client/src/models";
+import { IUser } from "../models";
 import Api from "../api";
 import Label from "./Label";
 import Labeled from "./Labeled";

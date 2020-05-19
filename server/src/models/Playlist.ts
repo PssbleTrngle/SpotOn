@@ -1,6 +1,6 @@
 import { Association, HasOneGetAssociationMixin, INTEGER, Sequelize, STRING } from "sequelize";
 import { warn } from "..";
-import { IPlaylist } from "../../../client/src/models";
+import { IPlaylist } from "../models";
 import OwnerModel from "./OwnerModel";
 import Rule from "./Rule";
 import User from "./User";
