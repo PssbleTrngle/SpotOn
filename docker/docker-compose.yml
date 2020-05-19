@@ -1,15 +1,10 @@
 version: "3.6"
 services:
-  app:
-    image: dockergelb/spoton
-    depends_on:
-      - client
-      - server
-    build:
-      context: ./
-      dockerfile: ./app.dockerfile
-
+  
   server:
+    image: dockergelb/spoton
+    depends_on: 
+      - client
     working_dir: /server
     volumes: 
       - ./db:/server/db
