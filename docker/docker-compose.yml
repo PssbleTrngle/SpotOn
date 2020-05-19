@@ -1,0 +1,30 @@
+version: "3.6"
+services:
+  app:
+    image: dockergelb/spoton
+    depends_on:
+      - client
+      - server
+    build:
+      context: ./
+      dockerfile: ./app.dockerfile
+
+  server:
+    working_dir: /server
+    volumes: 
+      - ./db:/server/db
+      - ./public:/client
+    ports:
+      - "8080:8080"
+    command: npm run run
+    build:
+      context: ../server
+      dockerfile: ../docker/server.dockerfile
+
+  client:
+    working_dir: /client
+    volumes: 
+      - ./public:/client/out/
+    build:
+      context: ../client
+      dockerfile: ../docker/client.dockerfile
