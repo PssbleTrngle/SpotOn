@@ -3,8 +3,11 @@ Label songs and create playlists using complex expressions
 
 ## Setup
 ```
-docker pull dockergelb/spoton && docker run -d --name spoton dockergelb/spoton:latest
+docker pull dockergelb/spoton && docker run -d --name spoton -p 8080:8080 dockergelb/spoton:latest
 ```
+
+Will host the docker container on port 8080.
+Create a virtual host using apache or nginx to access it via https and a subdomain
 
 ## Docker Volumes
 The container uses two volumes:
