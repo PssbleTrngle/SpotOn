@@ -1,6 +1,6 @@
 version: "3.6"
 services:
-  
+
   server:
     image: dockergelb/spoton
     depends_on: 
@@ -9,8 +9,6 @@ services:
     volumes: 
       - ./db:/server/db
       - ./public:/client
-    ports:
-      - "8080:8080"
     command: npm run run
     build:
       context: ../server
