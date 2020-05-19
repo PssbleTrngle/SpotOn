@@ -4,6 +4,10 @@ name: Deploy to Dockerhub
 on:
   push:
     branches: [ master ]
+    paths: 
+      - docker/**
+      - client/**
+      - server/**
   repository_dispatch:
     types: [deploy]
     
