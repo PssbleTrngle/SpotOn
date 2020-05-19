@@ -8,3 +8,5 @@ RUN cd /server && npm install
 COPY ./src server/src/
 COPY ./tsconfig.json server/
 RUN cd /server && npm run build
+
+CMD npm run start
