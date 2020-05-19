@@ -1,0 +1,21 @@
+  
+name: Deploy to Dockerhub
+
+on:
+  push:
+    branches: [ master ]
+  repository_dispatch:
+    types: [deploy]
+    
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Build
+      run: docker-compose build app
+      working-directory: docker
+    - name: Login
+      run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
+    - name: Push
+      run: docker push dockergelb/spoton
