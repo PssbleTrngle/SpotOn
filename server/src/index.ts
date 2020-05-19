@@ -57,6 +57,14 @@ export type App = {
     TrackCOntroller,
 ].forEach(c => c.register(app as App));
 
+if (!DEBUG) {
+    app.use(express.static('/client'));
+
+    app.get('*', (_, res) => {
+        res.sendFile('/client/index.html');
+    });
+}
+
 async function start() {
 
     try {

@@ -1,5 +1,5 @@
 import l from 'lodash';
-import { IRule, Stats } from '../../../client/src/models';
+import { IRule, Stats } from '../models';
 import { ApiFunc, App } from '../index';
 import { Type } from '../models/Category';
 import { GroupOperator, Operators } from '../models/Operator';
@@ -11,7 +11,7 @@ export default {
     register(app: App) {
 
         app.get('/api/playlist', async (req, res) => {
-            const noSpotify = req.query.simple == true;
+            const noSpotify = req.query.simple === 'true';
 
             const playlists = await req.user.getPlaylists();
             if (noSpotify) res.json({ success: true, data: playlists });

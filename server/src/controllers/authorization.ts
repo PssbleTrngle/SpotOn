@@ -1,7 +1,7 @@
 import session from 'express-session';
 import passport from 'passport';
 import { Strategy } from 'passport-spotify';
-import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET } from '../config';
+import { CLIENT_ID, CLIENT_SECRET, REDIRECT_URL, SCOPES, SESSION_SECRET, CLIENT_URL } from '../config';
 import { ApiFunc, App } from '../index';
 import User from '../models/User';
 
@@ -40,7 +40,7 @@ export default {
 
         app.get('/authorize', passport.authenticate('spotify', {
             failureRedirect: '/login',
-        }), (req, res) => res.redirect('http://localhost:3000'));
+        }), (req, res) => res.redirect(CLIENT_URL));
 
         const auth: ApiFunc = (req, res, next) => {
             if (req.isAuthenticated()) return next();

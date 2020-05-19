@@ -1,6 +1,6 @@
 import { Op } from 'sequelize';
 import { isArray } from 'util';
-import { ITrack } from '../../../client/src/models';
+import { ITrack } from '../models';
 import { APIRequest, App } from '../index';
 import Label from '../models/Label';
 import Labeled from '../models/Labeled';

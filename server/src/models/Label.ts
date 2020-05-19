@@ -1,5 +1,5 @@
 import { INTEGER, Sequelize, STRING } from "sequelize";
-import { ILabel } from "../../../client/src/models";
+import { ILabel } from "../models";
 import Labeled from "./Labeled";
 import OwnerModel from "./OwnerModel";
 import User from "./User";

@@ -10,7 +10,7 @@ import User from './models/User';
 require('sequelize-hierarchy')(Sequelize);
 const sequelize = new Sequelize({
     dialect: 'sqlite',
-    storage: './database.sqlite',
+    storage: './db/database.sqlite',
     logging: false,
 });
 
