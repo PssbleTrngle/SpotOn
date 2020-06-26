@@ -11,7 +11,6 @@ export default class Label extends OwnerModel implements ILabel {
     public id!: number;
     public color!: string;
     public name!: string;
-    //@ts-ignore
     public icon?: string;
 
     static setup(sequelize: Sequelize) {
