@@ -58,10 +58,10 @@ export type App = {
 ].forEach(c => c.register(app as App));
 
 if (!DEBUG) {
-    app.use(express.static('/client'));
+    app.use(express.static('/client/build'));
 
     app.get('*', (_, res) => {
-        res.sendFile('/client/index.html');
+        res.sendFile('/client/build/index.html');
     });
 }
 
