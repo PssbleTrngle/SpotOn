@@ -1,5 +1,5 @@
 import axios from "axios";
-import { useCallback, useState } from "react";
+import React, { useCallback, useState } from "react";
 
 export const request = axios.create({
    baseURL: '/api',
@@ -9,23 +9,30 @@ export const request = axios.create({
 })
 
 type Method = 'get' | 'post' | 'put' | 'delete'
-export default function useSubmit(endpoint: string, body?: Record<string, unknown>, method: Method = 'post') {
+export default function useSubmit<T>(
+   endpoint: string,
+   body?: Record<string, unknown>,
+   params?: { method?: Method, onSuccess?: (t: T) => unknown | Promise<unknown> },
+) {
    const [error, setError] = useState<Error>()
    const [loading, setLoading] = useState(false)
 
-   const onSubmit = useCallback(async () => {
+   const onSubmit = useCallback(async (e?: React.FormEvent) => {
       try {
+         e?.preventDefault()
+
          setLoading(true)
          setError(undefined)
 
-         await request[method](endpoint, body)
+         const response = await request[params?.method ?? 'post'](endpoint, body)
+         await params?.onSuccess?.(response.data)
 
       } catch (e) {
          setError(error)
       } finally {
          setLoading(false)
       }
-   }, [endpoint])
+   }, [endpoint, params])
 
    return [onSubmit, error, loading] as [typeof onSubmit, Error | undefined, boolean]
 }

@@ -1,9 +1,7 @@
 import { useTheme } from '@emotion/react'
-import styled from '@emotion/styled'
 import Head from 'next/head'
 import React, { FC, ReactNode } from 'react'
 import useTooltip from './hooks/useTooltip'
-import Nav from './Nav'
 
 const Layout: FC<{
    children?: ReactNode
@@ -37,29 +35,13 @@ const Layout: FC<{
             <link rel='manifest' href='/manifest.json' />
          </Head>
 
-         <Container>
-            <Nav />
-            {Array.isArray(children)
-               ? <div>{children}</div>
-               : children
-            }
-         </Container>
+         {Array.isArray(children)
+            ? <div>{children}</div>
+            : children
+         }
+
       </>
    )
 }
-
-const Container = styled.div`
-   display: grid;
-   grid-template:
-      "nav content"
-      / 300px 1fr;
-
-   & > div {
-      padding: 1rem;
-      overflow-x: hidden;
-      overflow-y: scroll;
-      height: 100vh;
-   }
-`
 
 export default Layout

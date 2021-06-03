@@ -1,6 +1,8 @@
 import styled from "@emotion/styled"
 import { FC } from "react"
+import Button from "../../components/Button"
 import Layout from "../../components/Layout"
+import Link from "../../components/Link"
 import TagLabel from "../../components/TagLabel"
 import Title from "../../components/Title"
 import database, { serialize } from "../../lib/database"
@@ -20,6 +22,10 @@ export const Home: FC<{ tags: ITag[] }> = ({ tags }) => {
                </li>
             )}
          </List>
+
+         <Link href='/tags/create'>
+            <Button>Create</Button>
+         </Link>
 
       </Layout>
    )

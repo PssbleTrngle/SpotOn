@@ -66,8 +66,9 @@ export async function getSavedTracks(session: Session, { limit = 20, offset = 0 
 }
 
 export async function getTracks(session: Session, ids: string[]) {
+   if (ids.length === 0) return []
    const query = stringify({ ids: ids.slice(0, 50).join(',') })
-   return request<{ tracks: Track }>(`tracks?${query}`, session).then(r => r.tracks)
+   return request<{ tracks: Track[] }>(`tracks?${query}`, session).then(r => r.tracks)
 }
 
 export function getPlaylists(session: Session) {

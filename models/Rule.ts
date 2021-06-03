@@ -10,20 +10,25 @@ import Or from "./rules/Or";
 const operations = new Map<string, Operation<unknown, unknown>>();
 [Add, Or, HasTag].forEach(o => operations.set(o.name, new o()))
 
-export interface IChildRule<T = unknown, V = unknown, C = unknown> {
-   id: string
+export interface IBaseRule<V = unknown> {
+   id?: string
    type: string
-   user: string
    value?: V
-   children?: IChildRule<C>[]
+   children?: IBaseRule[]
+}
+
+export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBaseRule {
+   id: string
    test(track: Track): boolean
    apply(track: Track): T
    operation(): Operation<T, V>
+   children?: IChildRule<C>[]
 }
 
 export interface IRule<T = unknown, V = unknown, C = unknown> extends IChildRule<T, V, C> {
    name: string
    slug: string
+   user: string
 }
 
 const schema = new Schema<Document & IRule>({
@@ -46,7 +51,7 @@ schema.methods.test = function (track: Track) {
    return !!this.apply(track)
 }
 
-schema.methods.operation = function() {
+schema.methods.operation = function () {
    const operation = operations.get(this.type)
    if (!operation) throw new Error('Invalid Rule')
    return operation
@@ -76,7 +81,7 @@ schema.add({
    },
 })
 
-schema.pre('save', async function(this: IRule) {
+schema.pre('save', async function (this: IRule) {
    this.slug = slugify(this.name, { lower: true })
 })
 

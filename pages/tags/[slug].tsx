@@ -1,5 +1,6 @@
 import { FC } from "react"
 import Layout from "../../components/Layout"
+import TagLabel from "../../components/TagLabel"
 import Title from "../../components/Title"
 import TrackGrid from "../../components/track/TrackGrid"
 import Track from "../../interfaces/Track"
@@ -8,11 +9,15 @@ import { getTracks } from "../../lib/spotify"
 import authenticate from "../../middleware/authenticate"
 import Tag, { ITag } from "../../models/Tag"
 
-export const Home: FC<ITag<Track>> = ({ name, color, tracks }) => {
+export const Home: FC<ITag<Track>> = tag => {
+   const { tracks } = tag
+
    return (
       <Layout>
 
-         <Title>{name}</Title>
+         <Title>
+            <TagLabel size={2} {...tag} />
+         </Title>
 
          <TrackGrid tracks={tracks} />
 
@@ -29,7 +34,7 @@ export const getServerSideProps = authenticate(async (session, req) => {
    }).then(t => serialize(t))
 
    if (!tag) return { notFound: true }
-   
+
    const tracks = await getTracks(session, tag.tracks)
 
    return { props: { ...tag, tracks } }

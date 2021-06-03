@@ -7,10 +7,10 @@ export const tagSchema = {
    color: Joi.string().optional(),
 }
 
-export default validate({ body: tagSchema }, async (req, res) => {
+export default validate({ body: tagSchema }, async (req, res, session) => {
 
    if (req.method === 'POST') {
-      return res.json(await Tag.create(req.body))
+      return res.json(await Tag.create({ ...req.body, user: session.user.id }))
    }
 
    res.status(400).json({

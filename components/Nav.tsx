@@ -5,6 +5,7 @@ import { useRouter } from 'next/router';
 import { darken } from "polished";
 import { FC } from "react";
 import Link from "./Link";
+import Pseudo from "./styles/Pseudo";
 
 const Nav: FC = () => (
    <Style>
@@ -71,14 +72,14 @@ const LinkStyle = styled.li<{ active?: boolean }>`
       background: #FFF1;
    }
 
+   transition: background 0.2s ease;
+
    &::after {
-      position: absolute;
-      content: '';
+      ${Pseudo};
       width: 3px;
-      top: 0;
       left: 100%;
       background: ${p => p.theme.primary};
-      transition: height 0.1s ease;
+      transition: height 0.3s ease;
       height: ${p => p.active ? 100 : 0}%;
    }
 `

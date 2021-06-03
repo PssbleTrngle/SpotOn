@@ -1,18 +1,32 @@
 import styled from "@emotion/styled";
-import { FC, Fragment } from "react";
-import { IChildRule } from "../models/Rule";
+import { transparentize } from "polished";
+import { Dispatch, FC, Fragment } from "react";
+import { IBaseRule } from "../models/Rule";
 
-const RuleView: FC<IChildRule> = ({ type, children, value }) => (
-   <Bubble>
-      {value && <span>{value as any}</span>}
+const RuleView: FC<IBaseRule & {
+   onSelect?: Dispatch<number[]>
+}> = ({ type, children, value, onSelect }) => (
+   <Bubble onClick={e => {
+      e.stopPropagation()
+      onSelect?.([])
+   }}>
+      {!children && (value 
+         ? <span>{(value as any)?.toString()}</span>
+         : <Type>{type}</Type>
+      )}
       {children?.map((child, i) =>
-         <Fragment key={child.id}>
+         <Fragment key={child.id ?? i}>
             {i > 0 && <span>{type}</span>}
-            <RuleView  {...child} />
+            <RuleView {...child} onSelect={p => onSelect?.([...p, i])} />
          </Fragment>
       )}
    </Bubble>
 )
+
+const Type = styled.span`
+   font-style: italic;
+   color: ${p => transparentize(0.2, p.theme.text)};
+`
 
 const Bubble = styled.div`
    width: min-content;

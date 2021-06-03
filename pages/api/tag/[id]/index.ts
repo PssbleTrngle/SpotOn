@@ -8,12 +8,13 @@ export default validate({
    query: {
       id: Joi.string().required(),
    }
-}, async (req, res) => {
+}, async (req, res, session) => {
 
-   const { id } = req.query
+   const id = req.query.id as string
 
    if (req.method === 'PUT') {
-      return res.json(await Tag.updateOne({ id: id as string }, req.body))
+      const updated = await Tag.updateOne({ id }, { ...req.body, user: session.user.id })
+      return res.json(updated)
    }
 
    res.status(400).json({

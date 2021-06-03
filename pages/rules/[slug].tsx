@@ -1,6 +1,6 @@
 import { FC } from "react"
 import Layout from "../../components/Layout"
-import RuleView from "../../components/RuleVIew"
+import RuleView from "../../components/RuleView"
 import Title from "../../components/Title"
 import TrackGrid from "../../components/track/TrackGrid"
 import Track from "../../interfaces/Track"
