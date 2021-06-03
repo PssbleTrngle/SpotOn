@@ -8,8 +8,6 @@
     "build": "next build",
     "start": "next start",
     "type-check": "tsc --pretty --noEmit",
-    "format": "prettier --write .",
-    "lint": "eslint . --ext ts --ext tsx --ext js",
     "test": "jest",
     "test-all": "yarn lint && yarn type-check && yarn test"
   },
@@ -21,14 +19,33 @@
   },
   "lint-staged": {
     "*.@(ts|tsx)": [
-      "yarn lint",
-      "yarn format"
+      "eslint --fix",
+      "prettier --write"
     ]
   },
   "dependencies": {
+    "@emotion/babel-plugin": "^11.3.0",
+    "@emotion/react": "^11.1.5",
+    "@emotion/styled": "^11.3.0",
+    "@styled-icons/fa-regular": "^10.26.0",
+    "@styled-icons/fa-solid": "^10.32.0",
+    "@types/axios": "^0.14.0",
+    "@types/lodash": "^4.14.170",
+    "@types/mongoose": "^5.10.5",
+    "axios": "^0.21.1",
+    "joi": "^17.4.0",
+    "lodash": "^4.17.21",
+    "luxon": "^1.27.0",
+    "mongodb": "^3.6.6",
+    "mongoose": "^5.12.11",
     "next": "latest",
+    "next-auth": "^3.23.3",
+    "polished": "^4.1.2",
     "react": "^17.0.1",
-    "react-dom": "^17.0.1"
+    "react-dom": "^17.0.1",
+    "react-tooltip": "^4.2.21",
+    "slugify": "^1.5.0",
+    "styled-components": "^5.2.3"
   },
   "devDependencies": {
     "@testing-library/react": "^11.2.5",
