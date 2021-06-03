@@ -40,7 +40,7 @@ async function database() {
    return cached.conn
 }
 
-export function define<M>(name: string, schema: Schema): Model<M> {
+export function define<M>(name: string, schema: Schema<Document & M>): Model<M> {
    return mongoose.models[name] ?? mongoose.model<M>(name, schema)
 }
 

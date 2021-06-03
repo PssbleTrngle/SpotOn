@@ -41,7 +41,7 @@ export default NextAuth({
             data.token = {
                accessToken: account.accessToken as string,
                refreshToken: account.refreshToken as string,
-               expiresAt: new Date().getTime() + account.expires_in,
+               expiresAt: new Date().getTime() + (account.expires_in ?? 0),
             }
          }
          return data
