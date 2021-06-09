@@ -1,22 +1,27 @@
 import styled from "@emotion/styled"
+import { shuffle } from "lodash"
+import { GetStaticProps } from "next"
 import { useRouter } from "next/router"
 import { FC, useState } from "react"
 import Button from "../../components/Button"
 import useSubmit from "../../components/hooks/useSubmit"
 import TextInput from "../../components/inputs/TextInput"
 import Layout from "../../components/Layout"
-import RuleForm, { exampleRule } from "../../components/RuleForm"
+import RuleForm from "../../components/RuleForm"
 import { BorderLeft, BorderRight } from "../../components/styles/Border"
 import Title from "../../components/Title"
 import { IBaseRule, IRule } from "../../models/Rule"
 
-export const Home: FC = () => {
+export const Home: FC<{
+   example: IBaseRule
+}> = ({ example }) => {
    const router = useRouter()
 
    const [name, setName] = useState('')
-   const [rule, setRule] = useState<IBaseRule>(exampleRule())
+   const [rule, setRule] = useState<IBaseRule>(example)
+   const [valid, setValid] = useState(false)
 
-   const [submit] = useSubmit<IRule>('rule', { name }, { onSuccess: r => router.push(`/tags/${r.slug}`) })
+   const [submit] = useSubmit<IRule>('rule', { name, ...rule }, { onSuccess: r => router.push(`/rules/${r.slug}`) })
 
    return (
       <Layout>
@@ -25,15 +30,31 @@ export const Home: FC = () => {
 
          <Form onSubmit={submit}>
 
-            <RuleForm value={rule} onChange={setRule} />
+            <RuleForm value={rule} onChange={setRule} onError={e => setValid(!e?.length)} />
 
             <TextInput value={name} onChange={setName} />
-            <Button>Create</Button>
-       
+            <Button disabled={!valid}>Create</Button>
+
          </Form>
 
       </Layout>
    )
+}
+
+function exampleRule(): IBaseRule {
+   const type = shuffle(['and', 'or'])[0]
+   return {
+      type,
+      children: new Array(2).fill(null).map(() => ({
+         type: shuffle(['hastag', 'inplaylist'])[0]
+      })).map(c => ({
+         ...c, display: c.type
+      }))
+   }
+}
+
+export const getStaticProps: GetStaticProps = async () => {
+   return { props: { example: exampleRule() } }
 }
 
 const Form = styled.form`
@@ -44,14 +65,16 @@ const Form = styled.form`
    justify-content: center;
 
    grid-template:
-      "rule rule"
-      "name submit";
+      ". name submit ."
+      "rule rule rule rule";
 
    input {
+      grid-area: name;
       ${BorderLeft};
    }
 
    button {
+      grid-area: submit;
       ${BorderRight};
    }
 `

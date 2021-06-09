@@ -1,26 +1,25 @@
 import { Document, Schema } from "mongoose";
+import { Session } from 'next-auth';
 import slugify from "slugify";
 import Track from "../interfaces/Track";
 import { define } from "../lib/database";
-import Add from "./rules/And";
-import HasTag from "./rules/HasTag";
+import { getSavedTracks } from "../lib/spotify";
+import { getOperation } from "./Operations";
 import Operation from "./rules/Operation";
-import Or from "./rules/Or";
-
-const operations = new Map<string, Operation<unknown, unknown>>();
-[Add, Or, HasTag].forEach(o => operations.set(o.name, new o()))
 
 export interface IBaseRule<V = unknown> {
    id?: string
    type: string
    value?: V
+   display?: string
    children?: IBaseRule[]
 }
 
-export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBaseRule {
+export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBaseRule<V> {
    id: string
-   test(track: Track): boolean
-   apply(track: Track): T
+   test(track: Track, session: Session): Promise<boolean>
+   apply(track: Track, session: Session): Promise<T>
+   tracks(session: Session): Promise<Track>
    operation(): Operation<T, V>
    children?: IChildRule<C>[]
 }
@@ -38,23 +37,34 @@ const schema = new Schema<Document & IRule>({
    },
    value: {
       type: Object,
-   }
+   },
+   display: {
+      type: String,
+   },
 })
 
-schema.methods.apply = function (track: Track) {
+schema.methods.apply = function (track: Track, session: Session) {
    const operation = this.operation()
    if (operation.valueType().validate(this.value).error) throw new Error('Invalid Rule')
-   return operation.apply(track, this)
+   return operation.apply(track, this, session)
 }
 
-schema.methods.test = function (track: Track) {
-   return !!this.apply(track)
+schema.methods.test = function (track: Track, session: Session) {
+   return !!this.apply(track, session)
 }
 
 schema.methods.operation = function () {
-   const operation = operations.get(this.type)
-   if (!operation) throw new Error('Invalid Rule')
-   return operation
+   return getOperation(this.type)
+}
+
+schema.methods.tracks = async function (session: Session) {
+   const { items } = await getSavedTracks(session)
+
+   const tracks = await Promise.all(items.map(({ track }) => ({
+      track, valid: this.test(track, session),
+   })))
+
+   return tracks.filter(t => t.valid).map(t => t.track)
 }
 
 const sub = schema.clone()

@@ -6,6 +6,7 @@ import List from '../interfaces/List';
 import Playlist, { ExtendedPlaylist } from '../interfaces/Playlist';
 import Track, { SavedTrack } from '../interfaces/Track';
 import Tag from '../models/Tag';
+import cacheOr from './cache';
 import { serialize } from './database';
 
 function isAxiosError(err: any): err is AxiosError {
@@ -60,9 +61,11 @@ async function request<R>(endpoint: string, session: Session, config?: AxiosRequ
    }
 }
 
-export async function getSavedTracks(session: Session, { limit = 20, offset = 0 } = {}) {
-   const query = stringify({ limit, offset })
-   return request<List<SavedTrack>>(`me/tracks?${query}`, session).then(t => populate(t))
+export function getSavedTracks(session: Session, { limit = 50, offset = 0 } = {}) {
+   return cacheOr(`${session.user.id}/saved`, () => {
+      const query = stringify({ limit, offset })
+      return request<List<SavedTrack>>(`me/tracks?${query}`, session).then(t => populate(t))
+   })
 }
 
 export async function getTracks(session: Session, ids: string[]) {
@@ -72,11 +75,15 @@ export async function getTracks(session: Session, ids: string[]) {
 }
 
 export function getPlaylists(session: Session) {
-   return request<List<Playlist>>(`users/${session.user.id}/playlists`, session)
+   return cacheOr(`${session.user.id}/playlists`, () =>
+      request<List<Playlist>>(`users/${session.user.id}/playlists`, session)
+   )
 }
 
 export function getPlaylist(session: Session, id: string) {
-   return request<ExtendedPlaylist>(`playlists/${id}`, session)
+   return cacheOr(`playlist/${id}`, () =>
+      request<ExtendedPlaylist>(`playlists/${id}`, session)
+   )
 }
 
 interface Populate {

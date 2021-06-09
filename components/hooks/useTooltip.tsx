@@ -7,7 +7,7 @@ export default function useTooltip(id?: string, props: TooltipProps = {}) {
    useEffect(() => {
       setMounted(true)
       return () => setMounted(false)
-   })
+   }, [setMounted])
 
    const tooltip = <ReactTooltip id={id} backgroundColor='#000' insecure={false} effect='solid' {...props} />
 

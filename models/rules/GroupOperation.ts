@@ -1,7 +1,20 @@
 import Joi from "joi";
+import { Session } from 'next-auth';
 import Track from "../../interfaces/Track";
 import { IChildRule } from "../Rule";
-import Operation from "./Operation";
+import Operation, { RuleError } from "./Operation";
+
+export class CompositeRuleError extends Error {
+   constructor(public readonly errors: RuleError[]) {
+      super(errors[0].message)
+   }
+
+   static of(e: any) {
+      const errors: RuleError[] = e instanceof RuleError ? [e] : e.errors ?? []
+      if (errors.length) return new CompositeRuleError(errors)
+      return null
+   }
+}
 
 export default abstract class GroupOperation<T, C> extends Operation<T, never> {
 
@@ -9,14 +22,14 @@ export default abstract class GroupOperation<T, C> extends Operation<T, never> {
       return Joi.allow(null).optional()
    }
 
-   constructor(private min = 2, private max = Number.MAX_SAFE_INTEGER) {
+   constructor(public readonly min = 2, public readonly max = Number.MAX_SAFE_INTEGER) {
       super();
    }
 
    abstract childType(): Joi.Schema
 
-   apply(track: Track, { children }: IChildRule<T, never, C>) {
-      const values = (children ?? []).map(r => r.apply(track))
+   async apply(track: Track, { children }: IChildRule<T, never, C>, session: Session) {
+      const values = await Promise.all((children ?? []).map(r => r.apply(track, session)))
       if (values.some(v => this.childType().validate(v).error)) throw new Error('Invalid Rule')
       return this.merge(values)
    }
@@ -24,9 +37,16 @@ export default abstract class GroupOperation<T, C> extends Operation<T, never> {
    abstract merge(children: C[]): T
 
    async valid({ children }: IChildRule<T, never, C>) {
-      return !!children
-         && await Promise.all(children.map(c => c.operation().valid(c))).then(a => a.every(b => b))
-         && children?.length >= this.min && children.length <= this.max
+      if (!children || children.length < this.min) throw new RuleError('Not enough children')
+      if (children.length > this.max) throw new RuleError('Too many children')
+   }
+
+   values() {
+      return []
+   }
+
+   valueDisplay(): string {
+      throw new Error('Group rule should not have a value')
    }
 
 }

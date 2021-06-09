@@ -1,5 +1,6 @@
 import styled from "@emotion/styled"
 import { FC } from "react"
+import Button from "../../components/Button"
 import Layout from "../../components/Layout"
 import Link from "../../components/Link"
 import Title from "../../components/Title"
@@ -21,6 +22,10 @@ export const Home: FC<{ rules: IRule[] }> = ({ rules }) => {
             )}
          </List>
 
+         <Link href='/rules/create'>
+            <Button>Create</Button>
+         </Link>
+
       </Layout>
    )
 }
@@ -32,8 +37,6 @@ export const getServerSideProps = authenticate(async session => {
    await database()
 
    const rules = await Rule.find({ user: session.user.id }).then(serialize)
-
-   await Rule.deleteMany()
 
    return { props: { rules } }
 })

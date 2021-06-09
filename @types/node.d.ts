@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Cache from 'node-cache';
 
 interface DB {
    client: MongoClient
@@ -12,6 +13,7 @@ declare global {
             conn?: typeof mongoose
             promise?: Promise<typeof mongoose>
          }
+         cache: Cache
       }
    }
 }

@@ -14,6 +14,7 @@ const Button = styled.button`
    &:disabled {
       background: ${p => lighten(0.2, p.theme.bg)};
       color: ${p => transparentize(0.2, p.theme.text)};
+      cursor: not-allowed;
    }
 `
 

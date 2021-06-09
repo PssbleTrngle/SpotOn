@@ -13,7 +13,7 @@ export default validate({
    const id = req.query.id as string
 
    if (req.method === 'PUT') {
-      const updated = await Tag.updateOne({ id }, { ...req.body, user: session.user.id })
+      const updated = await Tag.findByIdAndUpdate(id, { ...req.body, user: session.user.id })
       return res.json(updated)
    }
 
