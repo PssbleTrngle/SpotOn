@@ -1,7 +1,7 @@
 import Add from "./rules/And";
 import HasTag from "./rules/HasTag";
 import InPlaylist from "./rules/InPlaylist";
-import Operation from "./rules/Operation";
+import Operation, { RuleError } from "./rules/Operation";
 import Or from "./rules/Or";
 
 const operations = new Map<string, Operation<unknown, unknown>>();
