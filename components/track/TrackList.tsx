@@ -1,5 +1,5 @@
 import { } from 'next-auth/client';
-import React, { FC } from "react";
+import React, { Dispatch, FC } from "react";
 import { SavedTrack } from "../../interfaces/Track";
 import { ITag } from '../../models/Tag';
 import { Options } from '../hooks/useMenu';
@@ -10,18 +10,19 @@ import TrackLine from "./TrackLine";
 const TrackList: FC<{
    tracks: SavedTrack[]
    tags: ITag[]
-}> = ({ tracks, tags }) => {
+   onChange?: Dispatch<void>
+}> = ({ tracks, tags, onChange }) => {
 
    const { isSelected, events } = useSelection(tracks, t => t.track.id, selected => ({
 
       title: `${selected.length} tracks`,
 
       'Add Tag': tags.reduce((o, tag) => ({
-         ...o, [tag.name]: () => request.post(`/tag/${tag.id}/track`, { tracks: selected })
+         ...o, [tag.name]: () => request.post(`/tag/${tag.id}/track`, { tracks: selected }).then(() => onChange?.())
       }), {} as Options),
 
       'Remove Tag': tags.reduce((o, tag) => ({
-         ...o, [tag.name]: () => request.delete(`/tag/${tag.id}/track`, { data: { tracks: selected } })
+         ...o, [tag.name]: () => request.delete(`/tag/${tag.id}/track`, { data: { tracks: selected } }).then(() => onChange?.())
       }), {} as Options),
 
    }))

@@ -61,11 +61,11 @@ async function request<R>(endpoint: string, session: Session, config?: AxiosRequ
    }
 }
 
-export function getSavedTracks(session: Session, { limit = 50, offset = 0 } = {}) {
-   return cacheOr(`${session.user.id}/saved`, () => {
+export function getSavedTracks(session: Session, { limit = 20, offset = 0 } = {}) {
+   return cacheOr(`${session.user.id}/saved/${offset}-${limit}`, () => {
       const query = stringify({ limit, offset })
-      return request<List<SavedTrack>>(`me/tracks?${query}`, session).then(t => populate(t))
-   })
+      return request<List<SavedTrack>>(`me/tracks?${query}`, session)
+   }).then(t => populate(t))
 }
 
 export async function getTracks(session: Session, ids: string[]) {

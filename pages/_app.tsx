@@ -2,24 +2,31 @@ import { css, Global, ThemeProvider, useTheme } from '@emotion/react'
 import styled from '@emotion/styled'
 import { Provider as AuthProvider } from 'next-auth/client'
 import { AppComponent } from 'next/dist/next-server/lib/router/router'
-import React, { FC } from 'react'
+import React, { FC, useRef } from 'react'
 import { MenuProvider } from '../components/hooks/useMenu'
+import { ScrollProvider } from '../components/hooks/useScroll'
 import Nav from '../components/Nav'
 import theme from '../lib/theme'
 import '../style/reset.css'
 
 const App: AppComponent = ({ Component, pageProps }) => {
+   const scrollRef = useRef<HTMLElement | null>(null)
+
    return (
       <AuthProvider session={pageProps.session}>
          <ThemeProvider theme={theme}>
             <MenuProvider>
-               <Styles />
+               <ScrollProvider value={scrollRef}>
+                  <Styles />
 
-               <Container>
-                  <Nav />
-                  <Component {...pageProps} />
-               </Container>
+                  <Container >
+                     <Nav />
+                     <section ref={scrollRef}>
+                        <Component {...pageProps} />
+                     </section>
+                  </Container>
 
+               </ScrollProvider>
             </MenuProvider>
          </ThemeProvider>
       </AuthProvider>
@@ -32,11 +39,11 @@ const Container = styled.div`
       "nav content"
       / 300px 1fr;
 
-   & > div {
-      padding: 1rem;
+   & > section {
       overflow-x: hidden;
       overflow-y: scroll;
       height: 100vh;
+      padding: 1rem;
    }
 `
 
