@@ -10,40 +10,33 @@ import authenticate from '../middleware/authenticate'
 import Tag, { ITag } from '../models/Tag'
 
 export const Home: FC<{
-  tracks: SavedTrack[]
-  tags: ITag[]
+   tracks: SavedTrack[]
+   tags: ITag[]
 }> = ({ tags }) => {
+   return (
+      <Layout>
+         <Style>
+            <Title>Saved Tracks</Title>
 
-  return (
-    <Layout>
-      <Style>
-
-        <Title>Saved Tracks</Title>
-
-        <TrackList tags={tags} endpoint='/api/saved' />
-
-      </Style>
-    </Layout>
-  )
+            <TrackList tags={tags} endpoint='/api/saved' />
+         </Style>
+      </Layout>
+   )
 }
 
 export const getServerSideProps = authenticate(async session => {
-  await database()
+   await database()
 
-  const [tracks, tags] = await Promise.all([
-    getSavedTracks(session, { limit: 10 }).then(l => l.items),
-    Tag.find({ user: session.user.id }).then(serialize),
-  ])
+   const [tracks, tags] = await Promise.all([getSavedTracks(session, { limit: 10 }).then(l => l.items), Tag.find({ user: session.user.id }).then(serialize)])
 
-  return { props: { tracks, tags } }
+   return { props: { tracks, tags } }
 })
 
-
 const Style = styled.div`
-  display: grid;
-  grid-template: 
-    "title" 100px
-    "tracks" 700px;
+   display: grid;
+   grid-template:
+      'title' 100px
+      'tracks' auto;
 `
 
 export default Home

@@ -1,24 +1,26 @@
-import styled from "@emotion/styled";
-import { CSSProperties, FC, MouseEventHandler } from "react";
-import Track from "../../interfaces/Track";
-import Image from "../Image";
-import TagLabel from "../TagLabel";
+import styled from '@emotion/styled'
+import { CSSProperties, FC, MouseEventHandler } from 'react'
+import Track from '../../interfaces/Track'
+import Image from '../Image'
+import TagLabel from '../TagLabel'
 
-const TrackLine: FC<Track & {
-   selected?: boolean
-   onClick?: MouseEventHandler
-   onContextMenu?: MouseEventHandler
-   style?: CSSProperties
-}> = ({ name, album, tags, selected, style, ...events }) => {
+const TrackLine: FC<
+   Track & {
+      selected?: boolean
+      onClick?: MouseEventHandler
+      onContextMenu?: MouseEventHandler
+      style?: CSSProperties
+   }
+> = ({ name, album, tags, selected, ...events }) => {
    const [image] = album.images
    return (
-      <Style selected={selected} {...events} style={style}>
+      <Style selected={selected} {...events}>
          <Image src={image?.url} />
          <h3>{name}</h3>
          <div>
-            {tags?.map(tag =>
+            {tags?.map(tag => (
                <TagLabel key={tag.id} {...tag} />
-            )}
+            ))}
          </div>
       </Style>
    )
@@ -35,10 +37,10 @@ const Style = styled.li<{ selected?: boolean }>`
    gap: 1rem;
 
    transition: background 0.1s ease;
-   background: ${p => p.selected ? '#FFF1' : 'transparent'};
+   background: ${p => (p.selected ? '#FFF1' : 'transparent')};
 
    &:hover {
-      background: #FFF2;
+      background: #fff2;
    }
 
    img {
