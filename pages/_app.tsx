@@ -1,32 +1,26 @@
-import { css, Global, ThemeProvider, useTheme } from '@emotion/react'
+import { css, Global, Theme, ThemeProvider, useTheme } from '@emotion/react'
 import styled from '@emotion/styled'
 import { Provider as AuthProvider } from 'next-auth/client'
 import { AppComponent } from 'next/dist/next-server/lib/router/router'
-import React, { FC, useRef } from 'react'
+import { darken } from 'polished'
+import React, { FC } from 'react'
 import { MenuProvider } from '../components/hooks/useMenu'
-import { ScrollProvider } from '../components/hooks/useScroll'
 import Nav from '../components/Nav'
 import theme from '../lib/theme'
 import '../style/reset.css'
 
 const App: AppComponent = ({ Component, pageProps }) => {
-   const scrollRef = useRef<HTMLElement | null>(null)
-
    return (
       <AuthProvider session={pageProps.session}>
          <ThemeProvider theme={theme}>
             <MenuProvider>
-               <ScrollProvider value={scrollRef}>
-                  <Styles />
+               <Styles />
 
-                  <Container >
-                     <Nav />
-                     <section ref={scrollRef}>
-                        <Component {...pageProps} />
-                     </section>
-                  </Container>
+               <Container >
+                  <Nav />
+                  <Component {...pageProps} />
+               </Container>
 
-               </ScrollProvider>
             </MenuProvider>
          </ThemeProvider>
       </AuthProvider>
@@ -39,7 +33,7 @@ const Container = styled.div`
       "nav content"
       / 300px 1fr;
 
-   & > section {
+   & > div {
       overflow-x: hidden;
       overflow-y: scroll;
       height: 100vh;
@@ -48,41 +42,46 @@ const Container = styled.div`
 `
 
 const Styles: FC = () => {
-   const { bg, text } = useTheme()
+   const theme = useTheme()
    return (
       <Global
          styles={css`
-            body {
+            html, body {
                font-family: sans-serif;
-               background: ${bg};
-               color: ${text};
+               background: ${theme.bg};
+               color: ${theme.text};
             }
 
             ul {
                list-style: none;
             }
 
-            ${scrollbar}
+            ${scrollbar(theme)}
       `} />
    )
 }
 
-const scrollbar = css`
+const scrollbar = (theme: Theme) => css`
    ::-webkit-scrollbar {
       width: auto;
    }
 
    ::-webkit-scrollbar-track {
-      background: #3e4247;
+      background: linear-gradient(
+         transparent,
+         ${darken(0.02, theme.bg)} 5%,
+         ${darken(0.02, theme.bg)} 95%,
+         transparent
+      );
    }
 
    ::-webkit-scrollbar-thumb {
-      background: #333438;
+      background: ${darken(0.1, theme.bg)};
       border-radius: 6px;
    }
 
    ::-webkit-scrollbar-thumb:hover {
-      background: #27292c;
+      background: ${darken(0.07, theme.bg)};
    }
 `
 

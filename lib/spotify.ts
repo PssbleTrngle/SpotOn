@@ -13,35 +13,8 @@ function isAxiosError(err: any): err is AxiosError {
    return err.isAxiosError === true
 }
 
-const { SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET } = process.env
-const base64 = Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')
-
-interface TokenResponse {
-   access_token: string
-   expires_in: number
-}
-
-async function refresh(session: Session) {
-   const { data } = await axios.post<TokenResponse>('https://accounts.spotify.com/api/token', stringify({
-      grant_type: 'refresh_token',
-      refresh_token: session.user.token.refreshToken,
-   }), {
-      headers: {
-         Authorization: `Basic ${base64}`
-      }
-   })
-
-   session.user.token.expiresAt = new Date().getTime() + data.expires_in
-   session.user.token.accessToken = data.access_token
-}
-
 async function request<R>(endpoint: string, session: Session, config?: AxiosRequestConfig) {
    try {
-
-      if (0 <= new Date().getTime()) {
-         console.warn('Token expired')
-         await refresh(session)
-      }
 
       const { data } = await axios.get<R>(endpoint, {
          baseURL: 'https://api.spotify.com/v1',

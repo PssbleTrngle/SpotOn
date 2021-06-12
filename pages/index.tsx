@@ -1,47 +1,28 @@
-import { FC, useCallback, useMemo } from 'react'
-import { useSWRInfinite } from 'swr'
-import Button from '../components/Button'
-import useScroll from '../components/hooks/useScroll'
+import styled from '@emotion/styled'
+import { FC } from 'react'
 import Layout from '../components/Layout'
 import Title from '../components/Title'
 import TrackList from '../components/track/TrackList'
-import List from '../interfaces/List'
 import { SavedTrack } from '../interfaces/Track'
 import database, { serialize } from '../lib/database'
 import { getSavedTracks } from '../lib/spotify'
 import authenticate from '../middleware/authenticate'
 import Tag, { ITag } from '../models/Tag'
 
-const PER_SCROLL = 10
-
 export const Home: FC<{
   tracks: SavedTrack[]
   tags: ITag[]
-}> = ({ tags, ...props }) => {
-
-  const { data, setSize, revalidate } = useSWRInfinite<List<SavedTrack>>(
-    (_, previous) => {
-      if(previous && !previous.next) return null
-      const offset = previous ? (previous.offset + previous.items.length) : 0
-      return `/api/saved?offset=${offset + props.tracks.length}&limit=${PER_SCROLL}`
-    }
-  )
-
-  const loadNext = useCallback(() => setSize(i => i + 1), [setSize])
-  useScroll(loadNext, { space: 0.6 })
-
-  const tracks = useMemo(() => [...props.tracks, ...data?.map(it => it.items).flat() ?? []], [data, props.tracks])
-  const hasNext = useMemo(() => !!data?.[data.length - 1].next, [data])
+}> = ({ tags }) => {
 
   return (
     <Layout>
+      <Style>
 
-      <Title>Saved Tracks</Title>
+        <Title>Saved Tracks</Title>
 
-      <TrackList tags={tags} tracks={tracks ?? []} onChange={revalidate} />
+        <TrackList tags={tags} endpoint='/api/saved' />
 
-      {hasNext && <Button onClick={loadNext}>Load More</Button>}
-
+      </Style>
     </Layout>
   )
 }
@@ -54,7 +35,15 @@ export const getServerSideProps = authenticate(async session => {
     Tag.find({ user: session.user.id }).then(serialize),
   ])
 
-  return { props: { tracks: [], tags } }
+  return { props: { tracks, tags } }
 })
+
+
+const Style = styled.div`
+  display: grid;
+  grid-template: 
+    "title" 100px
+    "tracks" 700px;
+`
 
 export default Home

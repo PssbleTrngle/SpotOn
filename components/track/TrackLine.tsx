@@ -1,5 +1,5 @@
 import styled from "@emotion/styled";
-import { FC, MouseEventHandler } from "react";
+import { CSSProperties, FC, MouseEventHandler } from "react";
 import Track from "../../interfaces/Track";
 import Image from "../Image";
 import TagLabel from "../TagLabel";
@@ -8,10 +8,11 @@ const TrackLine: FC<Track & {
    selected?: boolean
    onClick?: MouseEventHandler
    onContextMenu?: MouseEventHandler
-}> = ({ name, album, tags, selected, ...events }) => {
+   style?: CSSProperties
+}> = ({ name, album, tags, selected, style, ...events }) => {
    const [image] = album.images
    return (
-      <Style selected={selected} {...events}>
+      <Style selected={selected} {...events} style={style}>
          <Image src={image?.url} />
          <h3>{name}</h3>
          <div>
@@ -24,7 +25,7 @@ const TrackLine: FC<Track & {
 }
 
 const Style = styled.li<{ selected?: boolean }>`
-   padding: 0.5rem;
+   padding: 10px;
    user-select: none;
 
    display: grid;
