@@ -1,13 +1,13 @@
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
-import { Session } from "next-auth";
-import { ApiError } from 'next/dist/next-server/server/api-utils';
-import { stringify } from 'querystring';
-import List from '../interfaces/List';
-import Playlist, { ExtendedPlaylist } from '../interfaces/Playlist';
-import Track, { SavedTrack } from '../interfaces/Track';
-import Tag from '../models/Tag';
-import cacheOr from './cache';
-import { serialize } from './database';
+import axios, { AxiosError, AxiosRequestConfig } from 'axios'
+import { Session } from 'next-auth'
+import { ApiError } from 'next/dist/next-server/server/api-utils'
+import { stringify } from 'querystring'
+import List from '../interfaces/List'
+import Playlist, { ExtendedPlaylist } from '../interfaces/Playlist'
+import Track, { SavedTrack } from '../interfaces/Track'
+import Tag from '../models/Tag'
+import cacheOr from './cache'
+import { serialize } from './database'
 
 function isAxiosError(err: any): err is AxiosError {
    return err.isAxiosError === true
@@ -15,18 +15,18 @@ function isAxiosError(err: any): err is AxiosError {
 
 async function request<R>(endpoint: string, session: Session, config?: AxiosRequestConfig) {
    try {
-
-      const { data } = await axios.get<R>(endpoint, {
+      const { data } = await axios(endpoint, {
          baseURL: 'https://api.spotify.com/v1',
          ...config,
          headers: {
             Authorization: `Bearer ${session.user.token.accessToken}`,
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
             ...config?.headers,
          },
       })
 
-      return data
-
+      return data as R
    } catch (err) {
       if (isAxiosError(err)) console.error(err.response?.data)
       else console.error(err.message)
@@ -48,15 +48,25 @@ export async function getTracks(session: Session, ids: string[]) {
 }
 
 export function getPlaylists(session: Session) {
-   return cacheOr(`${session.user.id}/playlists`, () =>
-      request<List<Playlist>>(`users/${session.user.id}/playlists`, session)
-   )
+   return cacheOr(`${session.user.id}/playlists`, () => request<List<Playlist>>(`users/${session.user.id}/playlists`, session))
 }
 
 export function getPlaylist(session: Session, id: string) {
-   return cacheOr(`playlist/${id}`, () =>
-      request<ExtendedPlaylist>(`playlists/${id}`, session)
-   )
+   return cacheOr(`playlist/${id}`, () => request<ExtendedPlaylist>(`playlists/${id}`, session))
+}
+
+export function createPlaylist(session: Session, name: string) {
+   return request<Playlist>(`users/${session.user.id}/playlists`, session, {
+      method: 'POST',
+      data: { name, description: 'Created using SpotOn' },
+   })
+}
+
+export function updatePlaylist(session: Session, playlist: string, tracks: Track[]) {
+   return request<Playlist>(`playlists/${playlist}/tracks`, session, {
+      method: 'PUT',
+      data: { uris: tracks.map(it => it.uri) },
+   })
 }
 
 interface Populate {
@@ -67,16 +77,15 @@ interface Populate {
 }
 
 const populate: Populate = async (tracks: any) => {
-
    const items: Array<SavedTrack | Track> = Array.isArray(tracks) ? tracks : tracks.items
-   const mapped = await Promise.all(items.map(async t => {
+   const mapped = await Promise.all(
+      items.map(async t => {
+         const tags = await Tag.find({ tracks: 'track' in t ? t.track.id : t.id }).then(serialize)
 
-      const tags = await Tag.find({ tracks: 'track' in t ? t.track.id : t.id }).then(serialize)
-
-      if ('track' in t) return { ...t, track: { ...t.track, tags } }
-      else return { ...t, tags }
-
-   }))
+         if ('track' in t) return { ...t, track: { ...t.track, tags } }
+         else return { ...t, tags }
+      })
+   )
 
    return Array.isArray(tracks) ? mapped : { ...tracks, items: mapped }
 }

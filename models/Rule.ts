@@ -1,11 +1,11 @@
-import { Document, Schema } from "mongoose";
-import { Session } from 'next-auth';
-import slugify from "slugify";
-import Track from "../interfaces/Track";
-import { define } from "../lib/database";
-import { getSavedTracks } from "../lib/spotify";
-import { getOperation } from "./Operations";
-import Operation from "./rules/Operation";
+import { Document, Schema } from 'mongoose'
+import { Session } from 'next-auth'
+import slugify from 'slugify'
+import Track from '../interfaces/Track'
+import { define } from '../lib/database'
+import { getSavedTracks } from '../lib/spotify'
+import { getOperation } from './Operations'
+import Operation from './rules/Operation'
 
 export interface IBaseRule<V = unknown> {
    id?: string
@@ -19,7 +19,7 @@ export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBase
    id: string
    test(track: Track, session: Session): Promise<boolean>
    apply(track: Track, session: Session): Promise<T>
-   tracks(session: Session): Promise<Track>
+   tracks(session: Session): Promise<Track[]>
    operation(): Operation<T, V>
    children?: IChildRule<C>[]
 }
@@ -28,6 +28,7 @@ export interface IRule<T = unknown, V = unknown, C = unknown> extends IChildRule
    name: string
    slug: string
    user: string
+   playlist?: string
 }
 
 const schema = new Schema<Document & IRule>({
@@ -49,8 +50,8 @@ schema.methods.apply = function (track: Track, session: Session) {
    return operation.apply(track, this, session)
 }
 
-schema.methods.test = function (track: Track, session: Session) {
-   return !!this.apply(track, session)
+schema.methods.test = async function (track: Track, session: Session) {
+   return (await this.apply(track, session)) === true
 }
 
 schema.methods.operation = function () {
@@ -60,9 +61,12 @@ schema.methods.operation = function () {
 schema.methods.tracks = async function (session: Session) {
    const { items } = await getSavedTracks(session)
 
-   const tracks = await Promise.all(items.map(({ track }) => ({
-      track, valid: this.test(track, session),
-   })))
+   const tracks = await Promise.all(
+      items.map(async ({ track }) => ({
+         track,
+         valid: await this.test(track, session),
+      }))
+   )
 
    return tracks.filter(t => t.valid).map(t => t.track)
 }
