@@ -10,8 +10,8 @@ export class CompositeRuleError extends Error {
    }
 
    static of(e: any) {
-      const errors: RuleError[] = e instanceof RuleError ? [e] : e.errors ?? []
-      if (errors.length) return new CompositeRuleError(errors)
-      return null
+      if (e instanceof CompositeRuleError) return e
+      if (e instanceof RuleError) return new CompositeRuleError([e])
+      throw e
    }
 }

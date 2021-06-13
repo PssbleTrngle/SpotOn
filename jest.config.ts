@@ -11,9 +11,10 @@ const config: Config.InitialOptions = {
    watchPlugins: ['jest-watch-typeahead/filename', 'jest-watch-typeahead/testname'],
    moduleNameMapper: {
       '\\.(css|less|sass|scss)$': 'identity-obj-proxy',
-      '\\.(gif|ttf|eot|svg|png)$': '<rootDir>/test/__mocks__/fileMock.js',
+      '\\.(gif|ttf|eot|svg|png)$': 'test-file-stub',
    },
    testEnvironment: 'node',
+   setupFiles: ['<rootDir>/test/setup.ts'],
 }
 
 export default config

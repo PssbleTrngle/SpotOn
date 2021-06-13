@@ -15,11 +15,11 @@ export interface IBaseRule<V = unknown> {
 }
 
 export interface IChildRule<V = unknown, C = unknown> extends IBaseRule<V> {
-   id: string
    children?: IChildRule<C>[]
 }
 
 export interface IRule<V = unknown, C = unknown> extends IChildRule<V, C> {
+   id: string
    name: string
    slug: string
    user: string

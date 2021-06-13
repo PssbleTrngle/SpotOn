@@ -14,6 +14,7 @@ const BaseSchema = {
    value: Joi.any(),
    display: Joi.any(),
    name: Joi.string().optional(),
+   id: Joi.string().optional(),
 }
 
 const WithValue = Joi.object({
@@ -48,7 +49,7 @@ export async function validateRule(rule: IChildRule, session: Session) {
          if (rule.value) throw new RuleError('value defined')
       } else {
          if (!rule.value) throw new RuleError('value missing')
-         if (rule.children?.length) throw new RuleError('children defined')
+         if (rule.children) throw new RuleError('children defined')
       }
 
       if (rule.children) {
@@ -76,8 +77,11 @@ export default wrapper(async (req, res, session) => {
          await validateRule(req.body, session)
          return res.json({ success: true })
       } catch (e) {
-         const errors = CompositeRuleError.of(e)?.errors ?? []
-         return res.status(400).json(errors.map(e => ({ ...e, message: e.message })))
+         if (e instanceof CompositeRuleError) {
+            return res.status(400).json(e.errors.map(e => ({ ...e, message: e.message })))
+         } else {
+            return res.status(500).json({ errors: [], error: 'Internal Server error' })
+         }
       }
 
    res.status(400).json({

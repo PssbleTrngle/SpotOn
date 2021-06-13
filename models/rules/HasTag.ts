@@ -16,8 +16,12 @@ export default class HasTag extends Operation<boolean, string> {
    }
 
    async valid({ value }: IChildRule<string>, session: Session) {
-      const exists = await Tag.findOne({ _id: value, user: session.user.id })
-      if (!exists) throw new RuleError('Tag not found')
+      try {
+         const exists = await Tag.findOne({ _id: value, user: session.user.id })
+         if (!exists) throw new Error('Tag not found')
+      } catch (e) {
+         throw new RuleError(e.message)
+      }
    }
 
    async values(session: Session) {
