@@ -10,9 +10,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix: 
-        job: [lint, test, type-check]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-node@v2
@@ -20,5 +17,4 @@ jobs:
       - name: Install dependencies
         run: yarn install --pure-lock
         
-      - name: ${{ matrix.job }}
-        run: npm run ${{ matrix.job }}
+      - run: npm run test-all
