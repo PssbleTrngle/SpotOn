@@ -3,7 +3,8 @@ import { Session } from 'next-auth'
 import Track from '../../interfaces/Track'
 import { getPlaylist, getPlaylists } from '../../lib/spotify'
 import { IChildRule } from '../Rule'
-import Operation, { RuleError } from './Operation'
+import { RuleError } from '../RuleError'
+import Operation from './Operation'
 
 export default class InPlaylist extends Operation<boolean, string> {
    valueType() {

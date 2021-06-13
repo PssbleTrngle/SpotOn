@@ -1,12 +1,12 @@
-import Joi from "joi";
-import { Session } from "next-auth";
-import Track from "../../interfaces/Track";
-import { IChildRule } from "../Rule";
-import Tag from "../Tag";
-import Operation, { RuleError } from "./Operation";
+import Joi from 'joi'
+import { Session } from 'next-auth'
+import Track from '../../interfaces/Track'
+import { IChildRule } from '../Rule'
+import { RuleError } from '../RuleError'
+import Tag from '../Tag'
+import Operation from './Operation'
 
 export default class HasTag extends Operation<boolean, string> {
-
    valueType() {
       return Joi.string()
    }
@@ -30,5 +30,4 @@ export default class HasTag extends Operation<boolean, string> {
       if (!tag) throw new Error('Invalid Rule')
       return tag.name
    }
-
 }
