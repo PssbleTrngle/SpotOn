@@ -6,6 +6,9 @@ on:
     branches:
       - main
       - develop
+    paths-ignore:
+      - .github/
+      - test/
 
 jobs:
   deploy:

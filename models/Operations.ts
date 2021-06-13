@@ -5,7 +5,7 @@ import Operation from './rules/Operation'
 
 const operations = new Map<string, Operation<unknown, unknown>>()
 
-const DIR = join(__dirname, 'rules')
+const DIR = join('models', 'rules')
 readdirSync(DIR)
    .map(f => resolve(DIR, f))
    .map(f => require(f))
