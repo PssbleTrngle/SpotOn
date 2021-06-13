@@ -11,11 +11,11 @@ export default class HasTag extends Operation<boolean, string> {
       return Joi.string()
    }
 
-   apply(track: Track, { value }: IChildRule<boolean, string>) {
+   apply(track: Track, { value }: IChildRule<string>) {
       return !!track.tags?.find(t => value === t.id)
    }
 
-   async valid({ value }: IChildRule<boolean, string>, session: Session) {
+   async valid({ value }: IChildRule<string>, session: Session) {
       const exists = await Tag.findOne({ _id: value, user: session.user.id })
       if (!exists) throw new RuleError('Tag not found')
    }
