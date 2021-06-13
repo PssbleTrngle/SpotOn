@@ -5,7 +5,6 @@ import Track from '../interfaces/Track'
 import { define } from '../lib/database'
 import { getSavedTracks } from '../lib/spotify'
 import { getOperation } from './Operations'
-import Operation from './rules/Operation'
 
 export interface IBaseRule<V = unknown> {
    id?: string
@@ -17,10 +16,6 @@ export interface IBaseRule<V = unknown> {
 
 export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBaseRule<V> {
    id: string
-   test(track: Track, session: Session): Promise<boolean>
-   apply(track: Track, session: Session): Promise<T>
-   tracks(session: Session): Promise<Track[]>
-   operation(): Operation<T, V>
    children?: IChildRule<C>[]
 }
 
@@ -29,6 +24,7 @@ export interface IRule<T = unknown, V = unknown, C = unknown> extends IChildRule
    slug: string
    user: string
    playlist?: string
+   tracks(session: Session): Promise<Track[]>
 }
 
 const schema = new Schema<Document & IRule>({
@@ -44,18 +40,8 @@ const schema = new Schema<Document & IRule>({
    },
 })
 
-schema.methods.apply = function (track: Track, session: Session) {
-   const operation = this.operation()
-   if (operation.valueType().validate(this.value).error) throw new Error('Invalid Rule')
-   return operation.apply(track, this, session)
-}
-
-schema.methods.test = async function (track: Track, session: Session) {
-   return (await this.apply(track, session)) === true
-}
-
-schema.methods.operation = function () {
-   return getOperation(this.type)
+export async function applyRule<T, V>(rule: IChildRule<T, V>, track: Track, session: Session): Promise<T> {
+   return getOperation<T, V>(rule.type).apply(track, rule, session)
 }
 
 schema.methods.tracks = async function (session: Session) {
@@ -64,7 +50,7 @@ schema.methods.tracks = async function (session: Session) {
    const tracks = await Promise.all(
       items.map(async ({ track }) => ({
          track,
-         valid: await this.test(track, session),
+         valid: (await applyRule(this, track, session)) === true,
       }))
    )
 

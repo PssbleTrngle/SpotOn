@@ -1,20 +1,9 @@
 import Joi from 'joi'
 import { Session } from 'next-auth'
 import Track from '../../interfaces/Track'
-import { IChildRule } from '../Rule'
-import Operation, { RuleError } from './Operation'
-
-export class CompositeRuleError extends Error {
-   constructor(public readonly errors: RuleError[]) {
-      super(errors[0].message)
-   }
-
-   static of(e: any) {
-      const errors: RuleError[] = e instanceof RuleError ? [e] : e.errors ?? []
-      if (errors.length) return new CompositeRuleError(errors)
-      return null
-   }
-}
+import { applyRule, IChildRule } from '../Rule'
+import { RuleError } from '../RuleError'
+import Operation from './Operation'
 
 export default abstract class GroupOperation<T, C> extends Operation<T, never> {
    valueType() {
@@ -28,8 +17,7 @@ export default abstract class GroupOperation<T, C> extends Operation<T, never> {
    abstract childType(): Joi.Schema
 
    async apply(track: Track, { children }: IChildRule<T, never, C>, session: Session) {
-      const values = await Promise.all((children ?? []).map(r => r.apply(track, session)))
-      //if (values.some(v => this.childType().validate(v).error)) throw new Error('Invalid Rule')
+      const values = await Promise.all((children ?? []).map(r => applyRule(r, track, session)))
       return this.merge(values)
    }
 

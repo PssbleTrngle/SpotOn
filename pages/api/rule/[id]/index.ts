@@ -1,7 +1,7 @@
 import Joi from 'joi'
 import validate from '../../../../lib/validate'
 import Rule from '../../../../models/Rule'
-import { validate as validateRule } from '../validate'
+import { validateRule } from '../validate'
 
 export default validate(
    {
