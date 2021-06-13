@@ -1,5 +1,5 @@
-import { createContext, Dispatch, FC, SetStateAction, useCallback, useContext, useEffect, useState } from "react";
-import Menu from "../Menu";
+import { createContext, Dispatch, FC, SetStateAction, useCallback, useContext, useEffect, useState } from 'react'
+import Menu from '../Menu'
 
 export type Option = Action | Options
 
@@ -24,14 +24,16 @@ const CONTEXT = createContext<State<Menu | null>>([null, () => console.warn('Men
 export function useMenu() {
    const [, setMenu] = useContext(CONTEXT)
 
-   const close = useCallback(() => setMenu(null), [])
-   const open = useCallback((options: Options) => (e: React.MouseEvent<HTMLElement>) => {
-      e.preventDefault()
-      setMenu({ options, point: [e.clientX, e.clientY] })
-   }, [])
+   const close = useCallback(() => setMenu(null), [setMenu])
+   const open = useCallback(
+      (options: Options) => (e: React.MouseEvent<HTMLElement>) => {
+         e.preventDefault()
+         setMenu({ options, point: [e.clientX, e.clientY] })
+      },
+      [setMenu]
+   )
 
    return { open, close }
-
 }
 
 export const MenuProvider: FC = ({ children }) => {
@@ -49,9 +51,7 @@ export const MenuProvider: FC = ({ children }) => {
    return (
       <CONTEXT.Provider value={[menu, setMenu]}>
          {menu && <Menu {...menu} />}
-         <section onClick={() => setMenu(null)}>
-            {children}
-         </section>
+         <section onClick={() => setMenu(null)}>{children}</section>
       </CONTEXT.Provider>
    )
 }

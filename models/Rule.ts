@@ -14,12 +14,12 @@ export interface IBaseRule<V = unknown> {
    children?: IBaseRule[]
 }
 
-export interface IChildRule<T = unknown, V = unknown, C = unknown> extends IBaseRule<V> {
+export interface IChildRule<V = unknown, C = unknown> extends IBaseRule<V> {
    id: string
    children?: IChildRule<C>[]
 }
 
-export interface IRule<T = unknown, V = unknown, C = unknown> extends IChildRule<T, V, C> {
+export interface IRule<V = unknown, C = unknown> extends IChildRule<V, C> {
    name: string
    slug: string
    user: string
@@ -40,8 +40,8 @@ const schema = new Schema<Document & IRule>({
    },
 })
 
-export async function applyRule<T, V>(rule: IChildRule<T, V>, track: Track, session: Session): Promise<T> {
-   return getOperation<T, V>(rule.type).apply(track, rule, session)
+export async function applyRule<Out, In>(rule: IChildRule<In>, track: Track, session: Session): Promise<Out> {
+   return getOperation<Out, In>(rule.type).apply(track, rule, session)
 }
 
 schema.methods.tracks = async function (session: Session) {

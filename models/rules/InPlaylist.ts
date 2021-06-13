@@ -11,21 +11,23 @@ export default class InPlaylist extends Operation<boolean, string> {
       return Joi.string()
    }
 
-   async apply(track: Track, { value }: IChildRule<boolean, string>, session: Session) {
-      const playlist = await getPlaylist(session, value!)
+   async apply(track: Track, { value }: IChildRule<string>, session: Session) {
+      if (!value) return false
+      const playlist = await getPlaylist(session, value)
       const b = !!playlist?.tracks.items.some(t => t.track.id === track.id)
       return b
    }
 
-   async valid({ value }: IChildRule<boolean, string>, session: Session) {
-      await getPlaylist(session, value!).catch(() => {
-         throw new RuleError('Playlist not found')
-      })
+   async valid({ value }: IChildRule<string>, session: Session) {
+      value &&
+         (await getPlaylist(session, value).catch(() => {
+            throw new RuleError('Playlist not found')
+         }))
    }
 
    async values(session: Session) {
       const { items } = await getPlaylists(session)
-      return items.map(it => ({ value: it.id!, display: it.name }))
+      return items.filter(it => it.id).map(it => ({ value: it.id, display: it.name }))
    }
 
    async valueDisplay(value: string, session: Session) {

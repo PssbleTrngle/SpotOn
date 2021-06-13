@@ -27,7 +27,7 @@ export default validate(
       if (req.method === 'POST') {
          const [tracks, playlist] = await Promise.all([rule.tracks(session), findOrCreatePlaylist(session, rule)])
 
-         await updatePlaylist(session, playlist.id!, tracks)
+         await updatePlaylist(session, playlist.id, tracks)
 
          return res.status(200).json({})
       }

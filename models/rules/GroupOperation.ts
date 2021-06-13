@@ -5,7 +5,7 @@ import { applyRule, IChildRule } from '../Rule'
 import { RuleError } from '../RuleError'
 import Operation from './Operation'
 
-export default abstract class GroupOperation<T, C> extends Operation<T, never> {
+export default abstract class GroupOperation<Out, ChildOut> extends Operation<Out, never> {
    valueType() {
       return Joi.allow(null).optional()
    }
@@ -16,14 +16,14 @@ export default abstract class GroupOperation<T, C> extends Operation<T, never> {
 
    abstract childType(): Joi.Schema
 
-   async apply(track: Track, { children }: IChildRule<T, never, C>, session: Session) {
-      const values = await Promise.all((children ?? []).map(r => applyRule(r, track, session)))
+   async apply(track: Track, { children }: IChildRule<unknown>, session: Session) {
+      const values = await Promise.all((children ?? []).map(r => applyRule<ChildOut, unknown>(r, track, session)))
       return this.merge(values)
    }
 
-   abstract merge(children: C[]): T
+   abstract merge(children: ChildOut[]): Out
 
-   async valid({ children }: IChildRule<T, never, C>) {
+   async valid({ children }: IChildRule<never, ChildOut>) {
       if (!children || children.length < this.min) throw new RuleError('Not enough children')
       if (children.length > this.max) throw new RuleError('Too many children')
    }

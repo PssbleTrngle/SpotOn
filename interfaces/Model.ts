@@ -1,5 +1,5 @@
 export default interface Model {
-   id?: string
+   id: string
    name: string
    href: string
    uri: string

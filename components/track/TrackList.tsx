@@ -137,7 +137,7 @@ const ListItem: FC<
          selected?: boolean
          type: ListType
       }
-> = ({ track, index, parent, style, columnIndex, type, isScrolling, ...itemProps }) => {
+> = ({ track, index, parent, style, columnIndex, type, ...itemProps }) => {
    const component = useMemo(() => {
       switch (type) {
          case ListType.BIG:
@@ -145,7 +145,7 @@ const ListItem: FC<
          case ListType.SMALL:
             return MinifiedTrackLine
       }
-   }, [type, isScrolling])
+   }, [type])
 
    return (
       <CellMeasurer parent={parent} rowIndex={index} columnIndex={columnIndex} cache={cache}>
