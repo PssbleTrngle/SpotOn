@@ -9,6 +9,8 @@
     "start": "next start",
     "type-check": "tsc --pretty --noEmit",
     "test": "jest",
+    "lint": "eslint **/*.{ts,tsx}",
+    "format": "prettier --write **/*.{ts,tsx}",
     "test-all": "yarn lint && yarn type-check && yarn test"
   },
   "husky": {
