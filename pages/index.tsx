@@ -1,5 +1,5 @@
-import styled from '@emotion/styled'
 import { FC } from 'react'
+import styled from 'styled-components'
 import Layout from '../components/Layout'
 import Title from '../components/Title'
 import TrackList from '../components/track/TrackList'

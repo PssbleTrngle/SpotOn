@@ -1,28 +1,21 @@
-import { css } from "@emotion/react"
-import styled from "@emotion/styled"
-import { darken, lighten } from "polished"
-import { Dispatch } from "react"
-import { IValue } from "../../models/rules/Operation"
+import { darken, lighten } from 'polished'
+import { Dispatch } from 'react'
+import styled, { css } from 'styled-components'
+import { IValue } from '../../models/rules/Operation'
 
-function Selection<V = string>({ value, onChange, values, label }: {
-   label?: string
-   value: V
-   onChange: Dispatch<IValue<V>>
-   values: IValue<V>[]
-}) {
-   return <>
-      <Label htmlFor={label}>{label}</Label>
-      <Values id={label}>
-         {values.map(v =>
-            <Value
-               onClick={() => onChange(v)}
-               selected={value === v.value}
-               key={(v.value as any).toString()}>
-               {v.display}
-            </Value>
-         )}
-      </Values>
-   </>
+function Selection<V = string>({ value, onChange, values, label }: { label?: string; value: V; onChange: Dispatch<IValue<V>>; values: IValue<V>[] }) {
+   return (
+      <>
+         <Label htmlFor={label}>{label}</Label>
+         <Values id={label}>
+            {values.map(v => (
+               <Value onClick={() => onChange(v)} selected={value === v.value} key={(v.value as any).toString()}>
+                  {v.display}
+               </Value>
+            ))}
+         </Values>
+      </>
+   )
 }
 
 const Label = styled.label`
@@ -51,9 +44,11 @@ const Value = styled.li<{ selected: boolean }>`
       background: ${p => lighten(0.05, p.theme.bg)};
    }
 
-   ${p => p.selected && css`
-      background: ${p.theme.primary} !important;
-   `}
+   ${p =>
+      p.selected &&
+      css`
+         background: ${p.theme.primary} !important;
+      `}
 `
 
 export default Selection

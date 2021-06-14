@@ -7,7 +7,7 @@ import Operation from './Operation'
 
 export default abstract class GroupOperation<Out, ChildOut> extends Operation<Out, never> {
    valueType() {
-      return Joi.allow(null).optional()
+      return null
    }
 
    constructor(public readonly min = 2, public readonly max = Number.MAX_SAFE_INTEGER) {

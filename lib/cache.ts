@@ -13,3 +13,9 @@ export default async function cacheOr<T>(key: string, supplier: () => T | Promis
 
    return supplied
 }
+
+export function invalidate(key: string) {
+   if (global.cache) {
+      global.cache.del(key)
+   }
+}

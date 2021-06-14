@@ -1,5 +1,5 @@
-import styled from "@emotion/styled";
-import { BorderLeft, BorderRight } from "../styles/Border";
+import styled from 'styled-components'
+import { BorderLeft, BorderRight } from '../styles/Border'
 
 const RoundForm = styled.form`
    display: grid;
@@ -7,7 +7,9 @@ const RoundForm = styled.form`
    gap: 0.3rem;
    justify-content: center;
 
-   & > input, label, button {
+   & > input,
+   label,
+   button {
       border-radius: 0;
 
       &:first-child {
@@ -19,4 +21,4 @@ const RoundForm = styled.form`
    }
 `
 
-export  default RoundForm
+export default RoundForm

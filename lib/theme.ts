@@ -1,6 +1,6 @@
-import { Theme } from "@emotion/react";
+import { DefaultTheme } from 'styled-components'
 
-const theme: Theme = {
+const theme: DefaultTheme = {
    bg: '#3e4247',
    text: '#EEE',
    error: '#cf2351',
@@ -11,7 +11,7 @@ const theme: Theme = {
    link: {
       default: '#1DB954',
       visited: '#1DB954',
-   }
+   },
 }
 
 export default theme

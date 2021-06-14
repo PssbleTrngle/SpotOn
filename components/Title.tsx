@@ -1,4 +1,4 @@
-import styled from "@emotion/styled";
+import styled from 'styled-components'
 
 const Title = styled.h1`
    padding: 1rem;

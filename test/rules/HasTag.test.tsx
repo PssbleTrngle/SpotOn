@@ -71,7 +71,7 @@ describe('HasTag Rules', () => {
       'with children',
       {
          type,
-         children: [],
+         children: [{ type }],
       },
       []
    )

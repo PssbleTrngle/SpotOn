@@ -11,6 +11,7 @@ export default wrapper(async (req, res, session) => {
 
          return res.json(rule)
       } catch (e) {
+         console.error(e)
          return res.status(400).json({ error: 'Invalid rule' })
       }
    }

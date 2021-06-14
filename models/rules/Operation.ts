@@ -18,7 +18,7 @@ export interface IValue<V = unknown> {
 export default abstract class Operation<Out, In> {
    abstract apply(track: Track, rule: IChildRule<In>, session: Session): Out | Promise<Out>
 
-   abstract valueType(): Joi.Schema
+   abstract valueType(): Joi.Schema | null
 
    async valid(_rule: IChildRule<In>, _session: Session) {}
 

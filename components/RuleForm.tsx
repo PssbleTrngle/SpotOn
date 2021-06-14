@@ -1,13 +1,13 @@
-import styled from "@emotion/styled"
-import { AxiosError } from "axios"
-import { transparentize } from "polished"
-import { Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useState } from "react"
+import { AxiosError } from 'axios'
+import { transparentize } from 'polished'
+import { Dispatch, FC, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
+import styled from 'styled-components'
 import useSWR from 'swr'
-import { IBaseRule } from "../models/Rule"
-import { IOperation } from "../models/rules/Operation"
-import { request } from "./hooks/useSubmit"
-import Selection from "./inputs/Selection"
-import RuleView from "./RuleView"
+import { IBaseRule } from '../models/Rule'
+import { IOperation } from '../models/rules/Operation'
+import { request } from './hooks/useSubmit'
+import Selection from './inputs/Selection'
+import RuleView from './RuleView'
 
 function recurseRule(rule: IBaseRule, path: number[]): IBaseRule {
    if (path.length <= 0) return rule
@@ -26,12 +26,12 @@ const RuleForm: FC<{
    onChange: Dispatch<SetStateAction<IBaseRule>>
    onError?: Dispatch<RuleError[] | undefined>
 }> = ({ value, onChange, onError }) => {
-
    const { data: operations } = useSWR<IOperation[]>('/api/rule/operations')
    const [errors, setErrors] = useState<RuleError[]>()
 
    useEffect(() => {
-      request.post<RuleError[]>('rule/validate', value)
+      request
+         .post<RuleError[]>('rule/validate', value)
          .then(() => setErrors(undefined))
          .catch((r: AxiosError) => setErrors(r.response?.data))
    }, [value])
@@ -53,32 +53,45 @@ const RuleForm: FC<{
       if (!rule.children || rule.children.length <= first) return rule
 
       return {
-         ...rule, children: rule.children.map((c, i) => {
+         ...rule,
+         children: rule.children.map((c, i) => {
             if (i === first) return modifyRecursive(c, value, rest)
             else return c
-         })
+         }),
       }
    }, [])
 
-   const modify = useCallback((change: SetStateAction<Partial<IBaseRule>>) => {
-      if (path && selected) onChange(modifyRecursive(value, change, path))
-   }, [modifyRecursive, path, value, onChange, selected])
+   const modify = useCallback(
+      (change: SetStateAction<Partial<IBaseRule>>) => {
+         if (path && selected) onChange(modifyRecursive(value, change, path))
+      },
+      [modifyRecursive, path, value, onChange, selected]
+   )
 
-   const add = useCallback((path: number[]) => {
-      onChange(modifyRecursive(value, r => {
-         const children = [...r.children ?? [], { type: '', display: 'Select...' }]
-         setPath([...path, children.length - 1])
-         return { children }
-      }, path))
-   }, [modifyRecursive, onChange, value])
+   const add = useCallback(
+      (path: number[]) => {
+         onChange(
+            modifyRecursive(
+               value,
+               r => {
+                  const children = [...(r.children ?? []), { type: '', display: 'Select...' }]
+                  setPath([...path, children.length - 1])
+                  return { children }
+               },
+               path
+            )
+         )
+      },
+      [modifyRecursive, onChange, value]
+   )
 
-   return <Style>
-      {!!errors?.length && <Error>{errors[0]?.message}</Error>}
-      <RuleView onAdd={add} {...value} onSelect={setPath} selected={path} errors={errors} />
-      {selected && operations &&
-         <EditPanel value={selected} onChange={modify} operations={operations} />
-      }
-   </Style>
+   return (
+      <Style>
+         {!!errors?.length && <Error>{errors[0]?.message}</Error>}
+         <RuleView onAdd={add} {...value} onSelect={setPath} selected={path} errors={errors} />
+         {selected && operations && <EditPanel value={selected} onChange={modify} operations={operations} />}
+      </Style>
+   )
 }
 
 const Error = styled.p`
@@ -98,34 +111,24 @@ const EditPanel: FC<{
 }> = ({ value, onChange, operations }) => {
    const operation = useMemo(() => operations.find(o => o.name === value.type), [operations, value])
 
-   const stripValues = useCallback((type: string) => {
-      const isGroup = operations.some(o => o.isGroup && o.name === type)
-      return {
-         children: isGroup ? (value.children ?? []) : undefined,
-         value: undefined,
-         display: undefined,
-      }
-   }, [operations, value])
+   const stripValues = useCallback(
+      (type: string) => {
+         const composite = operations.some(o => o.isGroup && o.name === type)
+         return {
+            children: composite ? value.children ?? [] : undefined,
+            composite,
+            value: undefined,
+            display: undefined,
+         }
+      },
+      [operations, value]
+   )
 
    return (
       <FormStyle>
+         <Selection label='type' values={operations.map(o => ({ value: o.name, ...o }))} onChange={({ value }) => onChange({ type: value, ...stripValues(value) })} value={value.type} />
 
-         <Selection
-            label='type'
-            values={operations.map(o => ({ value: o.name, ...o }))}
-            onChange={({ value }) => onChange({ type: value, ...stripValues(value) })}
-            value={value.type}
-         />
-
-         {operation && (operation.isGroup ||
-            <Selection
-               label='value'
-               values={operation.values}
-               onChange={onChange}
-               value={value.value}
-            />
-         )}
-
+         {operation && (operation.isGroup || <Selection label='value' values={operation.values} onChange={onChange} value={value.value} />)}
       </FormStyle>
    )
 }

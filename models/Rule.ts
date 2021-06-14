@@ -5,6 +5,7 @@ import Track from '../interfaces/Track'
 import { define } from '../lib/database'
 import { getSavedTracks } from '../lib/spotify'
 import { getOperation } from './Operations'
+import GroupOperation from './rules/GroupOperation'
 
 export interface IBaseRule<V = unknown> {
    id?: string
@@ -12,6 +13,7 @@ export interface IBaseRule<V = unknown> {
    value?: V
    display?: string
    children?: IBaseRule[]
+   composite?: boolean
 }
 
 export interface IChildRule<V = unknown, C = unknown> extends IBaseRule<V> {
@@ -57,10 +59,15 @@ schema.methods.tracks = async function (session: Session) {
    return tracks.filter(t => t.valid).map(t => t.track)
 }
 
+schema.virtual('composite').get(function (this: IBaseRule) {
+   return getOperation(this.type) instanceof GroupOperation
+})
+
 const sub = schema.clone()
+sub.add({ children: [sub] })
 
 schema.add({
-   children: [sub],
+   children: { type: [sub] },
    name: {
       type: String,
       required: true,
@@ -78,6 +85,7 @@ schema.add({
    playlist: {
       type: String,
       unique: true,
+      sparse: true,
    },
 })
 

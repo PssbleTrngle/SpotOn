@@ -1,6 +1,6 @@
-import { ThemeProvider } from '@emotion/react'
 import { Queries, queries, render } from '@testing-library/react'
 import { FC, ReactElement } from 'react'
+import { ThemeProvider } from 'styled-components'
 import theme from '../lib/theme'
 
 const Providers: FC = ({ children }) => {

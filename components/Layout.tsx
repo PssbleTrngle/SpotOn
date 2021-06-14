@@ -1,6 +1,6 @@
-import { useTheme } from '@emotion/react'
 import Head from 'next/head'
 import React, { FC, ReactNode } from 'react'
+import { useTheme } from 'styled-components'
 import useTooltip from './hooks/useTooltip'
 
 const Layout: FC<{
@@ -9,7 +9,6 @@ const Layout: FC<{
    image?: string
    description?: string
 }> = ({ children, title = 'SpotOn', image = '/icon.png', description }) => {
-
    const { bg } = useTheme()
    const tooltip = useTooltip()
 
@@ -35,11 +34,7 @@ const Layout: FC<{
             <link rel='manifest' href='/manifest.json' />
          </Head>
 
-         {Array.isArray(children)
-            ? <div>{children}</div>
-            : children
-         }
-
+         {Array.isArray(children) ? <div>{children}</div> : children}
       </>
    )
 }

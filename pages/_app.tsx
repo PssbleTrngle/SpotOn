@@ -1,9 +1,8 @@
-import { css, Global, Theme, ThemeProvider, useTheme } from '@emotion/react'
-import styled from '@emotion/styled'
 import { Provider as AuthProvider } from 'next-auth/client'
 import { AppComponent } from 'next/dist/next-server/lib/router/router'
 import { darken } from 'polished'
-import React, { FC } from 'react'
+import React from 'react'
+import styled, { createGlobalStyle, ThemeProvider } from 'styled-components'
 import { MenuProvider } from '../components/hooks/useMenu'
 import Nav from '../components/Nav'
 import theme from '../lib/theme'
@@ -14,13 +13,12 @@ const App: AppComponent = ({ Component, pageProps }) => {
       <AuthProvider session={pageProps.session}>
          <ThemeProvider theme={theme}>
             <MenuProvider>
-               <Styles />
+               <GlobalStyles />
 
-               <Container >
+               <Container>
                   <Nav />
                   <Component {...pageProps} />
                </Container>
-
             </MenuProvider>
          </ThemeProvider>
       </AuthProvider>
@@ -30,7 +28,7 @@ const App: AppComponent = ({ Component, pageProps }) => {
 const Container = styled.div`
    display: grid;
    grid-template:
-      "nav content"
+      'nav content'
       / 300px 1fr;
 
    & > div {
@@ -41,27 +39,17 @@ const Container = styled.div`
    }
 `
 
-const Styles: FC = () => {
-   const theme = useTheme()
-   return (
-      <Global
-         styles={css`
-            html, body {
-               font-family: sans-serif;
-               background: ${theme.bg};
-               color: ${theme.text};
-            }
+const GlobalStyles = createGlobalStyle`
+   html, body {
+      font-family: sans-serif;
+      background: ${theme.bg};
+      color: ${theme.text};
+   }
 
-            ul {
-               list-style: none;
-            }
+   ul {
+      list-style: none;
+   }
 
-            ${scrollbar(theme)}
-      `} />
-   )
-}
-
-const scrollbar = (theme: Theme) => css`
    ::-webkit-scrollbar {
       width: auto;
    }

@@ -1,7 +1,7 @@
-import '@emotion/react';
+import 'styled-components'
 
-declare module '@emotion/react' {
-   interface Theme {
+declare module 'styled-components' {
+   interface DefaultTheme {
       bg: string
       primary: string
       secondary: string

@@ -1,8 +1,6 @@
-import { jsx } from '@emotion/react'
-import styled from '@emotion/styled'
-import {} from 'next-auth/client'
-import React, { FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { createElement, FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AutoSizer, CellMeasurer, CellMeasurerCache, InfiniteLoader, List as VirtualList, ListRowProps } from 'react-virtualized'
+import styled from 'styled-components'
 import { useSWRInfinite } from 'swr'
 import List from '../../interfaces/List'
 import Track, { SavedTrack } from '../../interfaces/Track'
@@ -151,7 +149,7 @@ const ListItem: FC<
       <CellMeasurer parent={parent} rowIndex={index} columnIndex={columnIndex} cache={cache}>
          {({ registerChild, measure }) => (
             <div ref={e => e && registerChild?.(e)} style={style} onLoad={measure}>
-               {jsx(component, {
+               {createElement(component, {
                   ...track,
                   ...itemProps,
                })}

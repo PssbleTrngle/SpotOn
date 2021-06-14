@@ -15,6 +15,7 @@ const BaseSchema = {
    display: Joi.any(),
    name: Joi.string().optional(),
    id: Joi.string().optional(),
+   composite: Joi.boolean().optional(),
 }
 
 const WithValue = Joi.object({
@@ -28,18 +29,23 @@ const WithChildren = Joi.object({
    children: Joi.array(),
 })
 
+function testSchema(schema: Joi.Schema, value: any) {
+   const { error } = schema.validate(value)
+   if (error) {
+      const message = error.details[0]?.message
+      throw new RuleError(message ?? 'Invalid rule')
+   }
+}
+
 export async function validateRule(rule: IChildRule, session: Session) {
    try {
       // test basic schema using joi
-      const schema = rule.children ? WithChildren : WithValue
-      const { error } = schema.validate(rule)
-      if (error) {
-         const message = error.details[0]?.message
-         throw new RuleError(message ?? 'Invalid rule')
-      }
+      testSchema(rule.children ? WithChildren : WithValue, rule)
 
       // operation exists
       const operation = getOperation(rule.type)
+      const valueSchema = operation.valueType()
+      if (valueSchema) testSchema(valueSchema.required(), rule.value)
       // operation specific validation
       await operation.valid(rule, session)
 
@@ -47,12 +53,7 @@ export async function validateRule(rule: IChildRule, session: Session) {
       if (operation instanceof GroupOperation) {
          if (!rule.children?.length) throw new RuleError('children missing')
          if (rule.value) throw new RuleError('value defined')
-      } else {
-         if (!rule.value) throw new RuleError('value missing')
-         if (rule.children) throw new RuleError('children defined')
-      }
 
-      if (rule.children) {
          const errors = await Promise.all(
             rule.children.map(async (child, i) => {
                try {
@@ -65,6 +66,9 @@ export async function validateRule(rule: IChildRule, session: Session) {
          ).then(a => a.filter(exists))
 
          if (errors.length > 0) throw new CompositeRuleError(flatten(errors))
+      } else {
+         if (!rule.value) throw new RuleError('value missing')
+         if (rule.children?.length) throw new RuleError('children defined')
       }
    } catch (e) {
       throw CompositeRuleError.of(e)

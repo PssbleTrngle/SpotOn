@@ -1,12 +1,14 @@
-import styled from "@emotion/styled";
-import { FC, MouseEventHandler } from "react";
-import Track from "../../interfaces/Track";
-import Image from "../Image";
+import { FC, MouseEventHandler } from 'react'
+import styled from 'styled-components'
+import Track from '../../interfaces/Track'
+import Image from '../Image'
 
-const TrackPanel: FC<Track & {
-   selected?: boolean
-   onClick?: MouseEventHandler
-}> = ({ name, album, selected, ...events }) => {
+const TrackPanel: FC<
+   Track & {
+      selected?: boolean
+      onClick?: MouseEventHandler
+   }
+> = ({ name, album, selected, ...events }) => {
    const [image] = album.images
 
    return (

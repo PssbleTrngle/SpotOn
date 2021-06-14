@@ -1,8 +1,8 @@
-import styled from "@emotion/styled";
-import { ArrowCircleLeft } from "@styled-icons/fa-solid";
-import { darken } from 'polished';
-import { FC, useEffect, useMemo, useState } from "react";
-import { Options, useMenu } from "./hooks/useMenu";
+import { ArrowCircleLeft } from '@styled-icons/fa-solid'
+import { darken } from 'polished'
+import { FC, useEffect, useMemo, useState } from 'react'
+import styled from 'styled-components'
+import { Options, useMenu } from './hooks/useMenu'
 
 const Menu: FC<{
    options: Options
@@ -16,7 +16,7 @@ const Menu: FC<{
    }, [options])
 
    const { title, ...visible } = useMemo(() => {
-      const find = (keys: string[], o = options): Options => keys.length === 0 ? o : find(keys.slice(1), (o as any)[keys[0]])
+      const find = (keys: string[], o = options): Options => (keys.length === 0 ? o : find(keys.slice(1), (o as any)[keys[0]]))
       if (selected.length) return find(selected)
       return options
    }, [options, selected])
@@ -26,26 +26,30 @@ const Menu: FC<{
       <Container x={x} y={y}>
          <ul>
             <p>
-               {selected.length > 0 && <button onClick={() => setSelected([])}>
-                  <ArrowCircleLeft size='1rem' />
-               </button>}
+               {selected.length > 0 && (
+                  <button onClick={() => setSelected([])}>
+                     <ArrowCircleLeft size='1rem' />
+                  </button>
+               )}
                {title ?? selected[selected.length - 1]}
             </p>
-            {Object.entries(visible).map(([key, option]) =>
-               <button key={key} name={key} onClick={() => {
-                  if (typeof option === 'function') Promise.resolve(option()).then(close)
-                  else if (Object.keys(option).length > 0) setSelected(s => [...s, key])
-               }}>
+            {Object.entries(visible).map(([key, option]) => (
+               <button
+                  key={key}
+                  name={key}
+                  onClick={() => {
+                     if (typeof option === 'function') Promise.resolve(option()).then(close)
+                     else if (Object.keys(option).length > 0) setSelected(s => [...s, key])
+                  }}>
                   {key}
                </button>
-            )}
+            ))}
          </ul>
       </Container>
    )
-
 }
 
-const Container = styled.div<{ x: number, y: number }>`
+const Container = styled.div<{ x: number; y: number }>`
    position: absolute;
    z-index: 999;
 

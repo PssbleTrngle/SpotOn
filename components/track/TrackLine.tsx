@@ -1,5 +1,5 @@
-import styled from '@emotion/styled'
 import { CSSProperties, FC, MouseEventHandler } from 'react'
+import styled from 'styled-components'
 import Track from '../../interfaces/Track'
 import Image from '../Image'
 import TagLabel from '../TagLabel'

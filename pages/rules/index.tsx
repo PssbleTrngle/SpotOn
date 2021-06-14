@@ -1,6 +1,6 @@
-import styled from '@emotion/styled'
 import { darken } from 'polished'
 import { FC } from 'react'
+import styled from 'styled-components'
 import Button from '../../components/Button'
 import Layout from '../../components/Layout'
 import Link from '../../components/Link'

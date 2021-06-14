@@ -1,4 +1,4 @@
-import { css } from "@emotion/react";
+import { css } from 'styled-components'
 
 export const BorderLeft = css`
    border-radius: 0;

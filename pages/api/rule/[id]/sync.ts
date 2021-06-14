@@ -1,5 +1,6 @@
 import Joi from 'joi'
 import { Session } from 'next-auth'
+import { invalidate } from '../../../../lib/cache'
 import { createPlaylist, getPlaylist, updatePlaylist } from '../../../../lib/spotify'
 import validate from '../../../../lib/validate'
 import Rule, { IRule } from '../../../../models/Rule'
@@ -28,6 +29,7 @@ export default validate(
          const [tracks, playlist] = await Promise.all([rule.tracks(session), findOrCreatePlaylist(session, rule)])
 
          await updatePlaylist(session, playlist.id, tracks)
+         invalidate(`playlist/${playlist.id}`)
 
          return res.status(200).json({})
       }

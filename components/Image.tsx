@@ -1,9 +1,7 @@
-import styled from "@emotion/styled";
-import { FC, ImgHTMLAttributes } from "react";
+import { FC, ImgHTMLAttributes } from 'react'
+import styled from 'styled-components'
 
-const Image: FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...props }) => (
-   <Style src={src ?? ''} {...props} />
-)
+const Image: FC<ImgHTMLAttributes<HTMLImageElement>> = ({ src, ...props }) => <Style src={src ?? ''} {...props} />
 
 const Style = styled.img<{ src: string }>`
    width: 100%;

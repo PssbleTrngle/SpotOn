@@ -1,11 +1,11 @@
-import styled from "@emotion/styled";
-import { signOut } from "next-auth/client";
-import { LinkProps } from "next/link";
-import { useRouter } from 'next/router';
-import { darken } from "polished";
-import { FC } from "react";
-import Link from "./Link";
-import Pseudo from "./styles/Pseudo";
+import { signOut } from 'next-auth/client'
+import { LinkProps } from 'next/link'
+import { useRouter } from 'next/router'
+import { darken } from 'polished'
+import { FC } from 'react'
+import styled from 'styled-components'
+import Link from './Link'
+import Pseudo from './styles/Pseudo'
 
 const Nav: FC = () => (
    <Style>
@@ -25,7 +25,7 @@ const Style = styled.nav`
    margin-right: 2rem;
 
    min-height: 100vh;
-   
+
    display: grid;
    grid-template-rows: 1fr auto;
 
@@ -35,7 +35,7 @@ const Style = styled.nav`
       grid-auto-flow: row;
       height: min-content;
    }
-   
+
    button {
       padding: 1rem;
       &:hover {
@@ -45,15 +45,12 @@ const Style = styled.nav`
 `
 
 const NavLink: FC<LinkProps> = ({ children, ...props }) => {
-
    const { asPath } = useRouter()
    const active = asPath === props.href
 
    return (
       <Link {...props} underline='hover'>
-         <LinkStyle active={active}>
-            {children}
-         </LinkStyle>
+         <LinkStyle active={active}>{children}</LinkStyle>
       </Link>
    )
 }
@@ -63,13 +60,13 @@ const LinkStyle = styled.li<{ active?: boolean }>`
    padding: 1rem;
    cursor: pointer;
 
-   a {   
+   a {
       color: ${p => p.theme.text};
       text-decoration: none;
    }
-      
+
    &:hover {
-      background: #FFF1;
+      background: #fff1;
    }
 
    transition: background 0.2s ease;
@@ -80,7 +77,7 @@ const LinkStyle = styled.li<{ active?: boolean }>`
       left: 100%;
       background: ${p => p.theme.primary};
       transition: height 0.3s ease;
-      height: ${p => p.active ? 100 : 0}%;
+      height: ${p => (p.active ? 100 : 0)}%;
    }
 `
 
